@@ -11,16 +11,6 @@ local Window = Library:CreateWindow({
     AutoShow = true,
 })
 
--- Initialize Theme and Save Managers FIRST
-ThemeManager:SetLibrary(Library)
-SaveManager:SetLibrary(Library)
-
-SaveManager:IgnoreThemeSettings() 
-SaveManager:SetIgnoreIndexes({ 'MenuKeybind' }) 
-
-ThemeManager:SetFolder('MyScriptHub')
-SaveManager:SetFolder('MyScriptHub/specific-game')
-
 -- Create all tabs
 local Tabs = {
     Main = Window:AddTab('Main'),
@@ -66,19 +56,28 @@ local VisualsGroup = Tabs.Visuals:AddLeftGroupbox('Visual Features')
 
 -- UI Settings Tab
 local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
+
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
+
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({ 'MenuKeybind' })
+
+ThemeManager:SetFolder('MyScriptHub')
+SaveManager:SetFolder('MyScriptHub/specific-game')
+
 MenuGroup:AddButton('Unload', function() Library:Unload() end)
-MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Menu keybind' }) 
+MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Menu keybind' })
 
 Library.ToggleKeybind = Options.MenuKeybind
 
--- Build UI Settings tab
-SaveManager:BuildConfigSection(Tabs['UI Settings']) 
+SaveManager:BuildConfigSection(Tabs['UI Settings'])
 ThemeManager:ApplyToTab(Tabs['UI Settings'])
 
 -- Load autoload config
 SaveManager:LoadAutoloadConfig()
 
--- Add FOV Circle
+-- FOV Circle (added at the end, not touching the UI structure)
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Thickness = 2
 FOVCircle.NumSides = 100
