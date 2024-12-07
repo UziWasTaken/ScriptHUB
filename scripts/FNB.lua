@@ -1,224 +1,376 @@
+local function import(s)
+    return loadstring(game:HttpGet( ("https://raw.githubusercontent.com/stavratum/lua/main/%s.lua"):format(s) ))()
+end
+
+import("fnb/hooks")
+local Connections = import("Connections")
+local Util = import("fnb/util")
+
 local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
 
 local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
 local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
 local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
 
+-- Create main window
 local Window = Library:CreateWindow({
-    Title = 'Universal Script',
+    Title = 'Friday Night Bloxxin\'',
     Center = true,
     AutoShow = true,
 })
 
+-- Create tabs
 local Tabs = {
     Main = Window:AddTab('Main'),
-    Aimbot = Window:AddTab('Aimbot'),
     ['UI Settings'] = Window:AddTab('UI Settings'),
 }
 
--- Main features group
-local MainGroup = Tabs.Main:AddLeftGroupbox('Player Features')
+-- Create main groupboxes
+local ConfigBox = Tabs.Main:AddLeftGroupbox('Configuration')
+local ControlBox = Tabs.Main:AddRightGroupbox('Controls')
+local UtilityBox = Tabs.Main:AddRightGroupbox('Utility')
 
-MainGroup:AddToggle('WalkSpeedEnabled', {
-    Text = 'WalkSpeed Enabled',
-    Default = false,
-    Tooltip = 'Enables WalkSpeed modification',
-})
+-- Store our controls
+local sliderObjects = {}
+local lockedToggles = {}
 
-MainGroup:AddSlider('WalkSpeedValue', {
-    Text = 'WalkSpeed',
-    Default = 16,
-    Min = 16,
-    Max = 500,
-    Rounding = 0,
-})
+local Chances = {
+    Marvelous = 100,
+    Sick = 0,
+    Good = 0,
+    Ok = 0,
+    Bad = 0,
+    Miss = 0
+}
 
-MainGroup:AddToggle('JumpPowerEnabled', {
-    Text = 'JumpPower Enabled',
-    Default = false,
-    Tooltip = 'Enables JumpPower modification',
-})
+-- Add this line to define Flags
+local Flags = {}
 
-MainGroup:AddSlider('JumpPowerValue', {
-    Text = 'JumpPower',
-    Default = 50,
-    Min = 50,
-    Max = 500,
-    Rounding = 0,
-})
+local Offsets = {
+    Marvelous = 0,
+    Sick = 0.032,
+    Good = 0.06,
+    Ok = 0.11,
+    Bad = 0.155,
+    Miss = 1
+}
 
-MainGroup:AddToggle('IsAnimeFan', {
-    Text = 'Toggle Feature',
-    Default = false,
-    Tooltip = 'Enables main feature',
-})
+local VirtualInputManager = (getvirtualinputmanager or game.GetService)(game, "VirtualInputManager")
+local InputService = game:GetService "UserInputService"
+local HttpService = game:GetService "HttpService"
+local RunService = game:GetService "RunService"
+local Players = game:GetService "Players"
 
-MainGroup:AddToggle('FireDirectly', {
-    Text = 'Fire Directly',
-    Default = false,
-    Tooltip = 'Toggles direct firing mode',
-})
+local Client = Players.LocalPlayer
+local PlayerGui = Client.PlayerGui
 
-Toggles.WalkSpeedEnabled:OnChanged(function()
-    if Toggles.WalkSpeedEnabled.Value then
-        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Options.WalkSpeedValue.Value
-    else
-        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
+local set_identity = (syn and syn.set_thread_identity or setidentity or setthreadcontext)
+local random = (meth and meth or math).random
+
+local get_signal_function, Roll do 
+    get_signal_function = function(Signal, Target)
+        local callback
+        
+        set_identity(2)
+        for index, connection in ipairs( getconnections(Signal) ) do
+            if getfenv(connection.Function).script == Target then
+                callback = connection.Function
+                break
+            end 
+        end
+        set_identity(7)
+        return callback;
     end
-end)
-
-Options.WalkSpeedValue:OnChanged(function()
-    if Toggles.WalkSpeedEnabled.Value then
-        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Options.WalkSpeedValue.Value
-    end
-end)
-
-Toggles.JumpPowerEnabled:OnChanged(function()
-    if Toggles.JumpPowerEnabled.Value then
-        game.Players.LocalPlayer.Character.Humanoid.JumpPower = Options.JumpPowerValue.Value
-    else
-        game.Players.LocalPlayer.Character.Humanoid.JumpPower = 50
-    end
-end)
-
-Options.JumpPowerValue:OnChanged(function()
-    if Toggles.JumpPowerEnabled.Value then
-        game.Players.LocalPlayer.Character.Humanoid.JumpPower = Options.JumpPowerValue.Value
-    end
-end)
-
--- Add after the Main features group but before UI Settings
-local AimbotGroup = Tabs.Aimbot:AddLeftGroupbox('Aimbot Settings')
-
-AimbotGroup:AddToggle('AimbotEnabled', {
-    Text = 'Enable Aimbot',
-    Default = false,
-    Tooltip = 'Toggles aimbot functionality',
-})
-
-AimbotGroup:AddToggle('AimbotTeamCheck', {
-    Text = 'Team Check',
-    Default = true,
-    Tooltip = 'Prevents aiming at teammates',
-})
-
-AimbotGroup:AddToggle('AimbotVisibilityCheck', {
-    Text = 'Visibility Check',
-    Default = true,
-    Tooltip = 'Only target visible players',
-})
-
-AimbotGroup:AddSlider('AimbotFOV', {
-    Text = 'FOV',
-    Default = 100,
-    Min = 0,
-    Max = 360,
-    Rounding = 0,
-    Tooltip = 'Field of View for target detection',
-})
-
-AimbotGroup:AddSlider('AimbotSmoothness', {
-    Text = 'Smoothness',
-    Default = 1,
-    Min = 1,
-    Max = 10,
-    Rounding = 1,
-    Tooltip = 'Higher = smoother aiming',
-})
-
-AimbotGroup:AddDropdown('AimbotTargetPart', {
-    Values = {'Head', 'HumanoidRootPart', 'Torso'},
-    Default = 1,
-    Multi = false,
-    Text = 'Target Part',
-    Tooltip = 'Body part to aim at',
-})
-
--- Aimbot implementation
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
-local RunService = game:GetService("RunService")
-
-local function GetClosestPlayer()
-    if not Toggles.AimbotEnabled.Value then return end
     
-    local closestPlayer = nil
-    local shortestDistance = Options.AimbotFOV.Value
-
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            -- Team Check
-            if Toggles.AimbotTeamCheck.Value and player.Team == LocalPlayer.Team then
-                continue
-            end
-
-            local character = player.Character
-            if not character or not character:FindFirstChild(Options.AimbotTargetPart.Value) then
-                continue
-            end
-
-            local targetPart = character[Options.AimbotTargetPart.Value]
-            local humanoid = character:FindFirstChild("Humanoid")
+    Roll = function()
+        local a, b = 0, 0
+        for Judgement, v in pairs(Chances) do
+            a += v
+        end
+        if (a < 1) then return Offsets.Marvelous end
+        
+        a = random(a)
+        for Judgement, v in pairs(Chances) do 
+            b += v
             
-            if humanoid and humanoid.Health <= 0 then
-                continue
-            end
-
-            -- Visibility Check
-            if Toggles.AimbotVisibilityCheck.Value then
-                local ray = Ray.new(Camera.CFrame.Position, (targetPart.Position - Camera.CFrame.Position).Unit * 1000)
-                local hit = workspace:FindPartOnRayWithIgnoreList(ray, {LocalPlayer.Character, character})
-                if hit then continue end
-            end
-
-            local screenPoint = Camera:WorldToScreenPoint(targetPart.Position)
-            local vectorDistance = (Vector2.new(screenPoint.X, screenPoint.Y) - Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)).Magnitude
-
-            if vectorDistance < shortestDistance then
-                closestPlayer = player
-                shortestDistance = vectorDistance
+            if (b > a) then
+                return Offsets[Judgement]
             end
         end
+        
+        return 0
     end
-
-    return closestPlayer
 end
 
-RunService.RenderStepped:Connect(function()
-    if Toggles.AimbotEnabled.Value then
-        local target = GetClosestPlayer()
-        if target and target.Character then
-            local targetPart = target.Character[Options.AimbotTargetPart.Value]
-            local targetPos = Camera:WorldToScreenPoint(targetPart.Position)
-            local mousePos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-            local aimPos = Vector2.new(targetPos.X, targetPos.Y)
-            
-            mousemoverel(
-                (aimPos.X - mousePos.X) / Options.AimbotSmoothness.Value,
-                (aimPos.Y - mousePos.Y) / Options.AimbotSmoothness.Value
-            )
+local MAIN = Connections:Open("MAIN")
+local TEMP = Connections:Open("TEMP")
+
+local function onChildAdded(Object)
+    if (not Object) then return end
+    if (tostring(Object) ~= "FNFEngine") then return end
+    
+    Object = Object:WaitForChild("Engine")
+    TEMP:Clear()
+    
+    local convert
+    local spawn = task.spawn
+    local delay = task.delay
+    
+    local Begin = Enum.UserInputState.Begin
+    local End = Enum.UserInputState.End
+    
+    local GimmickNotes
+    local Chart = {}
+    local IncomingNotes = {}
+    
+    local Song, SongData, SongOffset, PBSpeed
+    local Stage = Object.Stage.Value
+    local Side = Object.PlayerSide.Value
+    
+    local TimePast = Object.Config.TimePast
+    
+    while (not Stage.Config.Song.Value) do
+        TimePast.Changed:Wait()
+    end
+
+    while not require(Object.Modules.Functions).notetypeconvert do
+        TimePast.Changed:Wait()
+    end
+    
+    local function Find(...)
+        local tostring = tostring 
+        local table_find = table.find
+        
+        for i,v in ipairs(Song:GetDescendants()) do
+            if table_find({...}, tostring(v)) then
+                return v
+            end
+        end
+        
+        for i,v in ipairs(Song.Parent:GetDescendants()) do
+            if table_find({...}, tostring(v))  then
+                return v
+            end
         end
     end
-end)
 
--- UI Settings
-local SettingsGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
-SettingsGroup:AddButton('Unload', function() Library:Unload() end)
-SettingsGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Menu keybind' })
+    local gc = getgc(true)
+    local rawget = rawget
+
+    for i = 1, #gc do local v = gc[i]
+        if type(v) == "table" and rawget(v, "song") then
+            SongData = v
+            break
+        end
+    end
+    
+    PBSpeed = Object.Config.PlaybackSpeed.Value
+    Song = Stage.Config.Song.Value
+    SongOffset = Find("Offset")
+    SongData = Object.Events.GetLibraryChart:InvokeServer()
+    convert = require(Object.Modules.Functions).notetypeconvert
+    
+    local Offset = Client.Input.Offset.Value + SongOffset.Value
+    local PoisonNotes = Find("MultipleGimmickNotes", "GimmickNotes", "MineNotes")
+    
+    for _, connection in ipairs(getconnections(Object.Events.UserInput.OnClientEvent)) do 
+        connection:Disable()
+    end
+    
+    
+    for Index, Note in ipairs(Util.parse( SongData )) do
+        local Note_1 = Note[1]
+        local Key, _, HellNote = convert(Note_1[2], Note_1[4])
+        Key = type(Key) == "string" and Key or "|"
+        
+        local function add()
+            Chart[#Chart + 1] = {
+                Length = Note[1][3],
+                At = Note[1][1] / PBSpeed - Offset,
+                Key = Key:split"_"[1]
+            }
+        end
+        
+        local function close()
+            add = function() end
+        end
+        
+        --
+    
+        local mustHit
+        
+        if (not Key or Key:find"|") then close() end
+        if type(Note[2]) ~= "table" then close() else
+            mustHit = Note[2].mustHitSection
+        end
+        
+        local Arrow = PoisonNotes and PoisonNotes:FindFirstChild(Key:split"_"[2] or Key:split"_"[1])
+        Arrow = Arrow and require(Arrow.ModuleScript)
+        
+        if (_) then mustHit = not mustHit end
+        if (mustHit and "R" or "L") ~= Side then close() end
+        if HellNote and (Arrow and Arrow.Type == "OnHit" or PoisonNotes and PoisonNotes.Value == "OnHit") then close() end
+        
+        add()
+    end
+    
+    for i,v in ipairs(Chart) do
+        IncomingNotes[v.Key] = (IncomingNotes[v.Key] or {})
+        if v.At > TimePast.Value * 1000 then 
+            IncomingNotes[v.Key][#IncomingNotes[v.Key] + 1] = { v.At - 22.5, tonumber(v.Length) and (v.Length / 1000) or 0 }
+        end
+    end
+    
+    local len = 0 
+    for i,v in pairs(IncomingNotes) do len += 1 end
+    
+    local inputFunction = get_signal_function(InputService.InputBegan, Object.Client)
+    
+    for Key, chart in pairs(IncomingNotes) do
+        local input = Util.getKeycode(Key, len)
+        local index = 1
+        
+        local function Check()
+            local Arrow = chart[index]
+            
+            if Arrow and (Arrow[1] <= TimePast.Value * 1000) then
+                index = index + 1
+                
+                if (not Flags.IsAnimeFan) then return end
+                local Offset = Roll()
+                if (Offset == 1) then return end
+                
+                if (Flags.FireDirectly) then 
+                    set_identity(2)   
+                     
+                    delay(Offset, inputFunction, { KeyCode = input, UserInputState = Begin })
+                    delay(Arrow[2] + Offset, inputFunction, { KeyCode = input, UserInputState = End })
+                else
+                    set_identity(7)
+                    
+                    delay(Offset, VirtualInputManager.SendKeyEvent, VirtualInputManager, true, input, false, nil)
+                    delay(Arrow[2] + Offset, VirtualInputManager.SendKeyEvent, VirtualInputManager, false, input, false, nil)
+                end
+                
+                spawn(Check)
+            end
+        end
+        
+        TEMP:Insert(RunService.RenderStepped, Check)
+    end
+end
+
+MAIN:Insert(PlayerGui.ChildAdded, onChildAdded)
+spawn(onChildAdded, PlayerGui:FindFirstChild"FNFEngine")
+
+-- Define the adjustSliders function
+local function adjustSliders(judgment, val)
+    Chances[judgment] = val
+    -- Add any additional logic needed for adjusting sliders
+end
+
+-- Create percentage sliders
+for judgment, value in pairs(Chances) do
+    sliderObjects[judgment] = ConfigBox:AddSlider('Slider' .. judgment, {
+        Text = '% ' .. judgment,
+        Default = value,
+        Min = 0,
+        Max = 100,
+        Rounding = 0,
+        Compact = false,
+        
+        Callback = function(val)
+            adjustSliders(judgment, val)
+        end
+    })
+    
+    -- Add lock toggle for each judgment
+    lockedToggles[judgment] = ConfigBox:AddToggle('Lock' .. judgment, {
+        Text = 'Lock ' .. judgment,
+        Default = false,
+        
+        Callback = function(bool)
+            Toggles['Lock' .. judgment].Value = bool
+        end
+    })
+end
+
+-- Add main controls
+ControlBox:AddToggle('AutoPlayer', {
+    Text = 'Toggle Autoplayer',
+    Default = false,
+    
+    Callback = function(bool)
+        Flags.IsAnimeFan = bool
+    end
+})
+
+ControlBox:AddToggle('DirectSignals', {
+    Text = 'Fire Signals Directly',
+    Default = false,
+    
+    Callback = function(bool)
+        Flags.FireDirectly = bool
+    end
+})
+
+-- Add utility buttons
+UtilityBox:AddButton({
+    Text = 'Unload Script',
+    Func = function()
+        set_identity(7)
+        Connections:Destroy()
+        Library:Unload()
+    end,
+})
+
+UtilityBox:AddButton({
+    Text = 'Copy Discord Invite',
+    Func = function()
+        local code = game:HttpGet "https://stavratum.github.io/invite"
+        local invite = "discord.gg" .. "/" .. code
+        setclipboard(invite)
+    end,
+})
+
+-- UI Settings tab setup
+local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
+
+MenuGroup:AddButton({
+    Text = 'Unload',
+    Func = function() 
+        Library:Unload() 
+    end
+})
+
+MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { 
+    Default = 'End', 
+    NoUI = true, 
+    Text = 'Menu keybind' 
+})
 
 Library.ToggleKeybind = Options.MenuKeybind
 
--- Theme and Save Manager Setup
+-- Set up theme and save managers
 ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)
+
 SaveManager:IgnoreThemeSettings()
 SaveManager:SetIgnoreIndexes({ 'MenuKeybind' })
 
-ThemeManager:SetFolder('UniversalScript')
-SaveManager:SetFolder('UniversalScript/GameConfigs')
+ThemeManager:SetFolder('FNB')
+SaveManager:SetFolder('FNB/configs')
 
 SaveManager:BuildConfigSection(Tabs['UI Settings'])
 ThemeManager:ApplyToTab(Tabs['UI Settings'])
 
+-- Initialize watermark
+Library:SetWatermarkVisibility(true)
+Library:SetWatermark('Friday Night Bloxxin\' - v1.0')
+
+-- Load autoload config
 SaveManager:LoadAutoloadConfig()
+
+if Client.Input.Keybinds.R4.Value == ";" then
+    game:GetService("ReplicatedStorage").Events.RemoteEvent:FireServer("Input", "Semicolon", "R4")
+end
