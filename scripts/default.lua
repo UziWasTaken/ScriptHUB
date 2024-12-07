@@ -264,7 +264,7 @@ ESPGroup:AddToggle('DistanceESP', {
     Tooltip = 'Shows distance to players',
 })
 
-ESPGroup:AddToggle('TeamCheck', {
+ESPGroup:AddToggle('TeamESPCheck', {
     Text = 'Team Check',
     Default = true,
     Tooltip = 'Only show ESP for enemies',
@@ -300,12 +300,12 @@ Toggles.DistanceESP:OnChanged(function()
     Flags.DistanceESP = Toggles.DistanceESP.Value
 end)
 
-Toggles.TeamCheck:OnChanged(function()
-    Flags.TeamCheck = Toggles.TeamCheck.Value
+Toggles.TeamESPCheck:OnChanged(function()
+    Flags.TeamESPCheck = Toggles.TeamESPCheck.Value
 end)
 
 Options.ESPMaxDistance:OnChanged(function()
-    Flags.MaxDistance = Options.ESPMaxDistance.Value
+    Flags.ESPMaxDistance = Options.ESPMaxDistance.Value
 end)
 
 -- ESP Implementation
@@ -386,7 +386,7 @@ local function UpdateESP()
             continue
         end
         
-        if Toggles.TeamCheck.Value and player.Team == LocalPlayer.Team then
+        if Toggles.TeamESPCheck.Value and player.Team == LocalPlayer.Team then
             esp.Box.Visible = false
             esp.Name.Visible = false
             esp.Distance.Visible = false
