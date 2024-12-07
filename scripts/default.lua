@@ -4,6 +4,16 @@ local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
 local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
 local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
 
+-- Initialize Theme and Save Manager FIRST
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
+
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({ 'MenuKeybind' })
+
+ThemeManager:SetFolder('MyScriptHub')
+SaveManager:SetFolder('MyScriptHub/specific-game')
+
 -- Create window
 local Window = Library:CreateWindow({
     Title = 'Universal Script',
@@ -56,16 +66,6 @@ local VisualsGroup = Tabs.Visuals:AddLeftGroupbox('Visual Features')
 
 -- UI Settings Tab
 local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
-
-ThemeManager:SetLibrary(Library)
-SaveManager:SetLibrary(Library)
-
-SaveManager:IgnoreThemeSettings()
-SaveManager:SetIgnoreIndexes({ 'MenuKeybind' })
-
-ThemeManager:SetFolder('MyScriptHub')
-SaveManager:SetFolder('MyScriptHub/specific-game')
-
 MenuGroup:AddButton('Unload', function() Library:Unload() end)
 MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Menu keybind' })
 
@@ -77,7 +77,7 @@ ThemeManager:ApplyToTab(Tabs['UI Settings'])
 -- Load autoload config
 SaveManager:LoadAutoloadConfig()
 
--- FOV Circle (added at the end, not touching the UI structure)
+-- FOV Circle
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Thickness = 2
 FOVCircle.NumSides = 100
