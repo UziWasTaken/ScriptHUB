@@ -125,10 +125,10 @@ AimbotGroup:AddDropdown('AimbotTargetPart', {
 })
 
 -- Aimbot implementation
+local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
-local RunService = game:GetService("RunService")
 
 local function GetClosestPlayer()
     if not Toggles.AimbotEnabled.Value then return end
@@ -241,6 +241,11 @@ ESPGroup:AddSlider('ESPMaxDistance', {
 })
 
 -- ESP Implementation
+if not Drawing then
+    warn("Your executor does not support the Drawing library!")
+    return
+end
+
 local ESPObjects = {}
 
 local function CreateESPObject()
