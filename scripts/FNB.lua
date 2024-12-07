@@ -16,12 +16,6 @@ local Tabs = {
     ['UI Settings'] = Window:AddTab('UI Settings'),
 }
 
--- Add this near the top of the script, after the Library initialization
-getgenv().Flags = {
-    IsAnimeFan = false,
-    FireDirectly = false
-}
-
 -- Main features group
 local MainGroup = Tabs.Main:AddLeftGroupbox('Player Features')
 
@@ -56,7 +50,15 @@ MainGroup:AddSlider('JumpPowerValue', {
 MainGroup:AddToggle('IsAnimeFan', {
     Text = 'Toggle Feature',
     Default = false,
--- Implement feature callbacks
+    Tooltip = 'Enables main feature',
+})
+
+MainGroup:AddToggle('FireDirectly', {
+    Text = 'Fire Directly',
+    Default = false,
+    Tooltip = 'Toggles direct firing mode',
+})
+
 Toggles.WalkSpeedEnabled:OnChanged(function()
     if Toggles.WalkSpeedEnabled.Value then
         game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Options.WalkSpeedValue.Value
