@@ -85,34 +85,24 @@ AimbotGroup:AddToggle('FOVFilled', {
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Thickness = 2
 FOVCircle.NumSides = 100
-FOVCircle.Radius = Options.FOVSize.Value
-FOVCircle.Filled = Toggles.FOVFilled.Value
+FOVCircle.Radius = 100
+FOVCircle.Filled = false
 FOVCircle.Color = Color3.new(1, 1, 1)
 FOVCircle.Transparency = 0.5
-FOVCircle.Visible = Toggles.ShowFOV.Value
+FOVCircle.Visible = true
 
--- Update Circle
-local RunService = game:GetService("RunService")
-RunService.RenderStepped:Connect(function()
+-- Update Circle Position
+game:GetService("RunService").RenderStepped:Connect(function()
     if FOVCircle then
         FOVCircle.Position = game:GetService("UserInputService"):GetMouseLocation()
-        FOVCircle.Radius = Options.FOVSize.Value
-        FOVCircle.Filled = Toggles.FOVFilled.Value
-        FOVCircle.Visible = Toggles.ShowFOV.Value
     end
 end)
 
--- Handle callbacks for FOV settings
-Toggles.ShowFOV:OnChanged(function()
-    FOVCircle.Visible = Toggles.ShowFOV.Value
-end)
-
-Options.FOVSize:OnChanged(function()
-    FOVCircle.Radius = Options.FOVSize.Value
-end)
-
-Toggles.FOVFilled:OnChanged(function()
-    FOVCircle.Filled = Toggles.FOVFilled.Value
+-- Clean up
+game:GetService("CoreGui").ChildRemoved:Connect(function(child)
+    if child.Name == "ScreenGui" then
+        FOVCircle:Remove()
+    end
 end)
 
 -- Visuals Tab
@@ -150,12 +140,5 @@ UIS.InputEnded:Connect(function(input, gameProcessed)
         if Toggles.AimbotEnabled then
             Toggles.AimbotEnabled.Value = false
         end
-    end
-end)
-
--- Clean up FOV circle when script ends
-game:GetService("CoreGui").ChildRemoved:Connect(function(child)
-    if child.Name == "ScreenGui" then
-        FOVCircle:Remove()
     end
 end)
