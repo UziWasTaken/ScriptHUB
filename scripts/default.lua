@@ -57,9 +57,9 @@ MainGroup:AddSlider('JumpPowerValue', {
 local AimbotGroup = Tabs.Aimbot:AddLeftGroupbox('Aimbot Settings')
 
 AimbotGroup:AddToggle('AimbotEnabled', {
-    Text = 'Enable Aimbot',
+    Text = 'Enabled',
     Default = false,
-    Tooltip = 'Toggles aimbot functionality',
+    Tooltip = 'Enables the aimbot functionality'
 })
 
 -- Changed keybind to use UserInputType instead of KeyCode
@@ -152,13 +152,13 @@ local RunService = game:GetService("RunService")
 
 UserInputService.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton2 then
-        Toggles.AimbotActive.Value = true
+        Toggles.AimbotEnabled.Value = true
     end
 end)
 
 UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton2 then
-        Toggles.AimbotActive.Value = false
+        Toggles.AimbotEnabled.Value = false
     end
 end)
 
