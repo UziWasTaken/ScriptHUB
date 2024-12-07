@@ -4,162 +4,210 @@ local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
 local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
 local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
 
--- Initialize Theme and Save Manager FIRST
-ThemeManager:SetLibrary(Library)
-SaveManager:SetLibrary(Library)
-
-SaveManager:IgnoreThemeSettings()
-SaveManager:SetIgnoreIndexes({ 'MenuKeybind' })
-
-ThemeManager:SetFolder('MyScriptHub')
-SaveManager:SetFolder('MyScriptHub/specific-game')
-
--- Create window
 local Window = Library:CreateWindow({
     Title = 'Universal Script',
     Center = true,
     AutoShow = true,
 })
 
--- Create all tabs
 local Tabs = {
     Main = Window:AddTab('Main'),
     Aimbot = Window:AddTab('Aimbot'),
-    Visuals = Window:AddTab('Visuals'),
-    ['UI Settings'] = Window:AddTab('UI Settings')
+    ['UI Settings'] = Window:AddTab('UI Settings'),
 }
 
--- Create FOV Circle first
-local FOVCircle = Drawing.new("Circle")
-FOVCircle.Thickness = 2
-FOVCircle.NumSides = 100
-FOVCircle.Radius = 100
-FOVCircle.Filled = false
-FOVCircle.Color = Color3.new(1, 1, 1)
-FOVCircle.Transparency = 0.5
-FOVCircle.Visible = true
-
--- Main Tab
+-- Main features group
 local MainGroup = Tabs.Main:AddLeftGroupbox('Player Features')
 
--- Create toggles
 MainGroup:AddToggle('WalkSpeedEnabled', {
     Text = 'WalkSpeed Enabled',
     Default = false,
-    Tooltip = 'Enables WalkSpeed modification'
+    Tooltip = 'Enables WalkSpeed modification',
 })
 
-MainGroup:AddSlider('WalkSpeed', {
+MainGroup:AddSlider('WalkSpeedValue', {
     Text = 'WalkSpeed',
     Default = 16,
     Min = 16,
     Max = 500,
     Rounding = 0,
-    Compact = false,
 })
 
 MainGroup:AddToggle('JumpPowerEnabled', {
     Text = 'JumpPower Enabled',
     Default = false,
-    Tooltip = 'Enables JumpPower modification'
+    Tooltip = 'Enables JumpPower modification',
 })
 
-MainGroup:AddSlider('JumpPower', {
+MainGroup:AddSlider('JumpPowerValue', {
     Text = 'JumpPower',
     Default = 50,
     Min = 50,
     Max = 500,
     Rounding = 0,
-    Compact = false,
 })
 
--- Visuals Tab
-local VisualsGroup = Tabs.Visuals:AddLeftGroupbox('Visual Features')
+-- Implement feature callbacks
+Toggles.WalkSpeedEnabled:OnChanged(function()
+    if Toggles.WalkSpeedEnabled.Value then
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Options.WalkSpeedValue.Value
+    else
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
+    end
+end)
 
--- Add ESP settings
-VisualsGroup:AddToggle('ESP_Enabled', {
-    Text = 'Enable ESP',
+Options.WalkSpeedValue:OnChanged(function()
+    if Toggles.WalkSpeedEnabled.Value then
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Options.WalkSpeedValue.Value
+    end
+end)
+
+Toggles.JumpPowerEnabled:OnChanged(function()
+    if Toggles.JumpPowerEnabled.Value then
+        game.Players.LocalPlayer.Character.Humanoid.JumpPower = Options.JumpPowerValue.Value
+    else
+        game.Players.LocalPlayer.Character.Humanoid.JumpPower = 50
+    end
+end)
+
+Options.JumpPowerValue:OnChanged(function()
+    if Toggles.JumpPowerEnabled.Value then
+        game.Players.LocalPlayer.Character.Humanoid.JumpPower = Options.JumpPowerValue.Value
+    end
+end)
+
+-- Add after the Main features group but before UI Settings
+local AimbotGroup = Tabs.Aimbot:AddLeftGroupbox('Aimbot Settings')
+
+AimbotGroup:AddToggle('AimbotEnabled', {
+    Text = 'Enable Aimbot',
     Default = false,
-    Tooltip = 'Toggles ESP features'
+    Tooltip = 'Toggles aimbot functionality',
 })
 
-VisualsGroup:AddToggle('ESP_ShowNames', {
-    Text = 'Show Names',
-    Default = false,
-    Tooltip = 'Shows player names'
-})
-
-VisualsGroup:AddToggle('ESP_ShowBoxes', {
-    Text = 'Show Boxes',
-    Default = false,
-    Tooltip = 'Shows boxes around players'
-})
-
-VisualsGroup:AddToggle('ESP_ShowDistance', {
-    Text = 'Show Distance',
-    Default = false,
-    Tooltip = 'Shows distance to players'
-})
-
--- Add FOV Circle settings
-local FOVGroup = Tabs.Visuals:AddRightGroupbox('FOV Circle')
-
-FOVGroup:AddToggle('FOV_Enabled', {
-    Text = 'Show FOV Circle',
+AimbotGroup:AddToggle('AimbotTeamCheck', {
+    Text = 'Team Check',
     Default = true,
-    Tooltip = 'Toggles FOV circle visibility'
+    Tooltip = 'Prevents aiming at teammates',
 })
 
-FOVGroup:AddSlider('FOV_Size', {
-    Text = 'FOV Size',
+AimbotGroup:AddToggle('AimbotVisibilityCheck', {
+    Text = 'Visibility Check',
+    Default = true,
+    Tooltip = 'Only target visible players',
+})
+
+AimbotGroup:AddSlider('AimbotFOV', {
+    Text = 'FOV',
     Default = 100,
-    Min = 10,
-    Max = 500,
+    Min = 0,
+    Max = 360,
     Rounding = 0,
-    Compact = false,
+    Tooltip = 'Field of View for target detection',
 })
 
-FOVGroup:AddToggle('FOV_Filled', {
-    Text = 'Filled Circle',
-    Default = false,
-    Tooltip = 'Toggles FOV circle fill'
+AimbotGroup:AddSlider('AimbotSmoothness', {
+    Text = 'Smoothness',
+    Default = 1,
+    Min = 1,
+    Max = 10,
+    Rounding = 1,
+    Tooltip = 'Higher = smoother aiming',
 })
 
--- UI Settings Tab
-local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
-MenuGroup:AddButton('Unload', function() Library:Unload() end)
-MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Menu keybind' })
+AimbotGroup:AddDropdown('AimbotTargetPart', {
+    Values = {'Head', 'HumanoidRootPart', 'Torso'},
+    Default = 1,
+    Multi = false,
+    Text = 'Target Part',
+    Tooltip = 'Body part to aim at',
+})
+
+-- Aimbot implementation
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local RunService = game:GetService("RunService")
+
+local function GetClosestPlayer()
+    if not Toggles.AimbotEnabled.Value then return end
+    
+    local closestPlayer = nil
+    local shortestDistance = Options.AimbotFOV.Value
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            -- Team Check
+            if Toggles.AimbotTeamCheck.Value and player.Team == LocalPlayer.Team then
+                continue
+            end
+
+            local character = player.Character
+            if not character or not character:FindFirstChild(Options.AimbotTargetPart.Value) then
+                continue
+            end
+
+            local targetPart = character[Options.AimbotTargetPart.Value]
+            local humanoid = character:FindFirstChild("Humanoid")
+            
+            if humanoid and humanoid.Health <= 0 then
+                continue
+            end
+
+            -- Visibility Check
+            if Toggles.AimbotVisibilityCheck.Value then
+                local ray = Ray.new(Camera.CFrame.Position, (targetPart.Position - Camera.CFrame.Position).Unit * 1000)
+                local hit = workspace:FindPartOnRayWithIgnoreList(ray, {LocalPlayer.Character, character})
+                if hit then continue end
+            end
+
+            local screenPoint = Camera:WorldToScreenPoint(targetPart.Position)
+            local vectorDistance = (Vector2.new(screenPoint.X, screenPoint.Y) - Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)).Magnitude
+
+            if vectorDistance < shortestDistance then
+                closestPlayer = player
+                shortestDistance = vectorDistance
+            end
+        end
+    end
+
+    return closestPlayer
+end
+
+RunService.RenderStepped:Connect(function()
+    if Toggles.AimbotEnabled.Value then
+        local target = GetClosestPlayer()
+        if target and target.Character then
+            local targetPart = target.Character[Options.AimbotTargetPart.Value]
+            local targetPos = Camera:WorldToScreenPoint(targetPart.Position)
+            local mousePos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+            local aimPos = Vector2.new(targetPos.X, targetPos.Y)
+            
+            mousemoverel(
+                (aimPos.X - mousePos.X) / Options.AimbotSmoothness.Value,
+                (aimPos.Y - mousePos.Y) / Options.AimbotSmoothness.Value
+            )
+        end
+    end
+end)
+
+-- UI Settings
+local SettingsGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
+SettingsGroup:AddButton('Unload', function() Library:Unload() end)
+SettingsGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Menu keybind' })
 
 Library.ToggleKeybind = Options.MenuKeybind
+
+-- Theme and Save Manager Setup
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({ 'MenuKeybind' })
+
+ThemeManager:SetFolder('UniversalScript')
+SaveManager:SetFolder('UniversalScript/GameConfigs')
 
 SaveManager:BuildConfigSection(Tabs['UI Settings'])
 ThemeManager:ApplyToTab(Tabs['UI Settings'])
 
--- Load autoload config
 SaveManager:LoadAutoloadConfig()
-
--- Update FOV Circle position (after everything is created)
-game:GetService("RunService").RenderStepped:Connect(function()
-    if FOVCircle then
-        FOVCircle.Position = game:GetService("UserInputService"):GetMouseLocation()
-    end
-end)
-
-game:GetService("CoreGui").ChildRemoved:Connect(function(child)
-    if child.Name == "ScreenGui" then
-        FOVCircle:Remove()
-    end
-end)
-
--- Update FOV Circle based on settings
-Toggles.FOV_Enabled:OnChanged(function()
-    FOVCircle.Visible = Toggles.FOV_Enabled.Value
-end)
-
-Options.FOV_Size:OnChanged(function()
-    FOVCircle.Radius = Options.FOV_Size.Value
-end)
-
-Toggles.FOV_Filled:OnChanged(function()
-    FOVCircle.Filled = Toggles.FOV_Filled.Value
-end)
