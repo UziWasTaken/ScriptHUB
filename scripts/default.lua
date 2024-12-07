@@ -131,11 +131,11 @@ AimbotGroup:AddDropdown('AimbotTargetPart', {
 })
 
 AimbotGroup:AddLabel('Aim Key'):AddKeyPicker('AimbotKey', {
-    Default = 'MouseButton2', -- Right mouse button
-    SyncToggleState = false, -- Don't sync toggle state to the keybind
-    Mode = 'Hold', -- Hold mode means it only works while key is held
-    Text = 'Aim Key', -- Text to show in the keybind menu
-    NoUI = false, -- Show in the UI
+    Default = 'RightClick',
+    SyncToggleState = false,
+    Mode = 'Hold',
+    Text = 'Aim Key',
+    NoUI = false,
 })
 
 -- Connect Aimbot callbacks
@@ -215,7 +215,7 @@ local function GetClosestPlayer()
 end
 
 RunService.RenderStepped:Connect(function()
-    if Toggles.AimbotEnabled.Value and Options.AimbotKey:GetState() then
+    if Toggles.AimbotEnabled.Value and (Options.AimbotKey:GetState()) then
         local target = GetClosestPlayer()
         if target and target.Character then
             local targetPart = target.Character[Options.AimbotTargetPart.Value]
