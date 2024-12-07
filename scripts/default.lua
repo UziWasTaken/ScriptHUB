@@ -4,163 +4,61 @@ local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
 local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
 local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
 
--- First create the window
+-- Create window
 local Window = Library:CreateWindow({
     Title = 'Universal Script',
     Center = true,
     AutoShow = true,
 })
 
--- Create all tabs first
+-- Create all tabs
 local Tabs = {
     Main = Window:AddTab('Main'),
     Aimbot = Window:AddTab('Aimbot'),
     Visuals = Window:AddTab('Visuals'),
-    ['UI Settings'] = Window:AddTab('UI Settings'),
+    ['UI Settings'] = Window:AddTab('UI Settings')
 }
-
--- Initialize Flags table
-local Flags = {}
 
 -- Main Tab
 local MainGroup = Tabs.Main:AddLeftGroupbox('Player Features')
-
 MainGroup:AddToggle('WalkSpeedEnabled', {
     Text = 'WalkSpeed Enabled',
     Default = false,
-    Tooltip = 'Enables WalkSpeed modification',
+    Tooltip = 'Enables WalkSpeed modification'
 })
 
-MainGroup:AddSlider('WalkSpeedValue', {
+MainGroup:AddSlider('WalkSpeed', {
     Text = 'WalkSpeed',
     Default = 16,
     Min = 16,
     Max = 500,
     Rounding = 0,
+    Compact = false,
 })
 
 MainGroup:AddToggle('JumpPowerEnabled', {
     Text = 'JumpPower Enabled',
     Default = false,
-    Tooltip = 'Enables JumpPower modification',
+    Tooltip = 'Enables JumpPower modification'
 })
 
-MainGroup:AddSlider('JumpPowerValue', {
+MainGroup:AddSlider('JumpPower', {
     Text = 'JumpPower',
     Default = 50,
     Min = 50,
     Max = 500,
     Rounding = 0,
-})
-
--- Aimbot Tab
-local AimbotGroup = Tabs.Aimbot:AddLeftGroupbox('Aimbot Settings')
-
-AimbotGroup:AddToggle('AimbotEnabled', {
-    Text = 'Enabled',
-    Default = false,
-    Tooltip = 'Enables the aimbot functionality'
-})
-
--- Changed keybind to use UserInputType instead of KeyCode
-AimbotGroup:AddToggle('AimbotActive', {
-    Text = 'Aimbot Active',
-    Default = false,
-})
-
-AimbotGroup:AddToggle('AimbotTeamCheck', {
-    Text = 'Team Check',
-    Default = true,
-})
-
-AimbotGroup:AddSlider('AimbotFOV', {
-    Text = 'FOV',
-    Default = 100,
-    Min = 0,
-    Max = 360,
-    Rounding = 0,
-})
-
-AimbotGroup:AddSlider('AimbotSmoothness', {
-    Text = 'Smoothness',
-    Default = 1,
-    Min = 1,
-    Max = 10,
-    Rounding = 1,
+    Compact = false,
 })
 
 -- Visuals Tab
-local VisualsGroup = Tabs.Visuals:AddLeftGroupbox('ESP Settings')
-
-VisualsGroup:AddToggle('ESPEnabled', {
-    Text = 'Enable ESP',
-    Default = false,
-})
-
-VisualsGroup:AddToggle('BoxESP', {
-    Text = 'Boxes',
-    Default = true,
-})
-
-VisualsGroup:AddToggle('TracerESP', {
-    Text = 'Tracers',
-    Default = false,
-})
-
-VisualsGroup:AddToggle('NameESP', {
-    Text = 'Names',
-    Default = true,
-})
-
-VisualsGroup:AddToggle('DistanceESP', {
-    Text = 'Distance',
-    Default = true,
-})
+local VisualsGroup = Tabs.Visuals:AddLeftGroupbox('Visual Features')
+-- Add your visual features here
 
 -- UI Settings Tab
-local SettingsGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
-
-SettingsGroup:AddButton('Unload', function() 
-    Library:Unload() 
-end)
-
-SettingsGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { 
-    Default = 'End', 
-    NoUI = true, 
-    Text = 'Menu keybind' 
-})
-
--- Initialize theme manager and save manager
-ThemeManager:SetLibrary(Library)
-SaveManager:SetLibrary(Library)
-
-SaveManager:IgnoreThemeSettings()
-SaveManager:SetIgnoreIndexes({ 'MenuKeybind' })
-
-ThemeManager:SetFolder('UniversalScript')
-SaveManager:SetFolder('UniversalScript/GameConfigs')
-
-SaveManager:BuildConfigSection(Tabs['UI Settings'])
-ThemeManager:ApplyToTab(Tabs['UI Settings'])
-
--- Set up the library toggle keybind
-Library.ToggleKeybind = Options.MenuKeybind
-
--- Implement aimbot using UserInputService
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-
-UserInputService.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton2 then
-        Toggles.AimbotEnabled.Value = true
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton2 then
-        Toggles.AimbotEnabled.Value = false
-    end
-end)
+local UISettingsTab = Tabs['UI Settings']
+ThemeManager:ApplyToTab(UISettingsTab)
+SaveManager:BuildConfigSection(UISettingsTab)
 
 -- Load autoload config
 SaveManager:LoadAutoloadConfig()
