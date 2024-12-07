@@ -51,6 +51,14 @@ MainGroup:AddSlider('JumpPower', {
     Compact = false,
 })
 
+-- Aimbot Tab
+local AimbotGroup = Tabs.Aimbot:AddLeftGroupbox('Aimbot')
+AimbotGroup:AddToggle('AimbotEnabled', {
+    Text = 'Enabled',
+    Default = false,
+    Tooltip = 'Enables the aimbot functionality'
+})
+
 -- Visuals Tab
 local VisualsGroup = Tabs.Visuals:AddLeftGroupbox('Visual Features')
 -- Add your visual features here
@@ -60,5 +68,31 @@ local UISettingsTab = Tabs['UI Settings']
 ThemeManager:ApplyToTab(UISettingsTab)
 SaveManager:BuildConfigSection(UISettingsTab)
 
+-- Set up the library toggle keybind
+Library.ToggleKeybind = Options.MenuKeybind
+
+-- Set up watermark
+Library:SetWatermarkVisibility(true)
+Library:SetWatermark('Universal Script')
+
 -- Load autoload config
 SaveManager:LoadAutoloadConfig()
+
+-- Handle aimbot activation
+local UIS = game:GetService("UserInputService")
+
+UIS.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed and input.UserInputType == Enum.UserInputType.MouseButton2 then
+        if Toggles.AimbotEnabled then
+            Toggles.AimbotEnabled.Value = true
+        end
+    end
+end)
+
+UIS.InputEnded:Connect(function(input, gameProcessed)
+    if not gameProcessed and input.UserInputType == Enum.UserInputType.MouseButton2 then
+        if Toggles.AimbotEnabled then
+            Toggles.AimbotEnabled.Value = false
+        end
+    end
+end)
