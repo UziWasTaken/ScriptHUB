@@ -4,12 +4,14 @@ local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
 local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
 local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
 
+-- First create the window
 local Window = Library:CreateWindow({
     Title = 'Universal Script',
     Center = true,
     AutoShow = true,
 })
 
+-- Create all tabs first
 local Tabs = {
     Main = Window:AddTab('Main'),
     Aimbot = Window:AddTab('Aimbot'),
