@@ -76,6 +76,55 @@ MainGroup:AddSlider('JumpPower', {
 -- Visuals Tab
 local VisualsGroup = Tabs.Visuals:AddLeftGroupbox('Visual Features')
 
+-- Add ESP settings
+VisualsGroup:AddToggle('ESP_Enabled', {
+    Text = 'Enable ESP',
+    Default = false,
+    Tooltip = 'Toggles ESP features'
+})
+
+VisualsGroup:AddToggle('ESP_ShowNames', {
+    Text = 'Show Names',
+    Default = false,
+    Tooltip = 'Shows player names'
+})
+
+VisualsGroup:AddToggle('ESP_ShowBoxes', {
+    Text = 'Show Boxes',
+    Default = false,
+    Tooltip = 'Shows boxes around players'
+})
+
+VisualsGroup:AddToggle('ESP_ShowDistance', {
+    Text = 'Show Distance',
+    Default = false,
+    Tooltip = 'Shows distance to players'
+})
+
+-- Add FOV Circle settings
+local FOVGroup = Tabs.Visuals:AddRightGroupbox('FOV Circle')
+
+FOVGroup:AddToggle('FOV_Enabled', {
+    Text = 'Show FOV Circle',
+    Default = true,
+    Tooltip = 'Toggles FOV circle visibility'
+})
+
+FOVGroup:AddSlider('FOV_Size', {
+    Text = 'FOV Size',
+    Default = 100,
+    Min = 10,
+    Max = 500,
+    Rounding = 0,
+    Compact = false,
+})
+
+FOVGroup:AddToggle('FOV_Filled', {
+    Text = 'Filled Circle',
+    Default = false,
+    Tooltip = 'Toggles FOV circle fill'
+})
+
 -- UI Settings Tab
 local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
 MenuGroup:AddButton('Unload', function() Library:Unload() end)
@@ -100,4 +149,17 @@ game:GetService("CoreGui").ChildRemoved:Connect(function(child)
     if child.Name == "ScreenGui" then
         FOVCircle:Remove()
     end
+end)
+
+-- Update FOV Circle based on settings
+Toggles.FOV_Enabled:OnChanged(function()
+    FOVCircle.Visible = Toggles.FOV_Enabled.Value
+end)
+
+Options.FOV_Size:OnChanged(function()
+    FOVCircle.Radius = Options.FOV_Size.Value
+end)
+
+Toggles.FOV_Filled:OnChanged(function()
+    FOVCircle.Filled = Toggles.FOV_Filled.Value
 end)
