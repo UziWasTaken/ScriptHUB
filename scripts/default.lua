@@ -51,37 +51,33 @@ MainGroup:AddSlider('JumpPower', {
     Compact = false,
 })
 
--- Aimbot Tab
-local AimbotGroup = Tabs.Aimbot:AddLeftGroupbox('Aimbot')
-AimbotGroup:AddToggle('AimbotEnabled', {
-    Text = 'Enabled',
-    Default = false,
-    Tooltip = 'Enables the aimbot functionality'
-})
+-- Visuals Tab
+local VisualsGroup = Tabs.Visuals:AddLeftGroupbox('Visual Features')
 
--- FOV Circle Settings
-AimbotGroup:AddToggle('ShowFOV', {
-    Text = 'Show FOV Circle',
-    Default = true,
-    Tooltip = 'Shows or hides the FOV circle'
-})
+-- UI Settings Tab (exactly as it was)
+local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
+MenuGroup:AddButton('Unload', function() Library:Unload() end)
+MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Menu keybind' }) 
 
-AimbotGroup:AddSlider('FOVSize', {
-    Text = 'FOV Size',
-    Default = 100,
-    Min = 10,
-    Max = 500,
-    Rounding = 0,
-    Compact = false,
-})
+Library.ToggleKeybind = Options.MenuKeybind
 
-AimbotGroup:AddToggle('FOVFilled', {
-    Text = 'Filled FOV',
-    Default = false,
-    Tooltip = 'Makes the FOV circle filled or not'
-})
+-- Theme Manager
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
 
--- Create FOV Circle
+SaveManager:IgnoreThemeSettings() 
+SaveManager:SetIgnoreIndexes({ 'MenuKeybind' }) 
+
+ThemeManager:SetFolder('MyScriptHub')
+SaveManager:SetFolder('MyScriptHub/specific-game')
+
+SaveManager:BuildConfigSection(Tabs['UI Settings']) 
+ThemeManager:ApplyToTab(Tabs['UI Settings'])
+
+-- Load autoload config
+SaveManager:LoadAutoloadConfig()
+
+-- Add FOV Circle
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Thickness = 2
 FOVCircle.NumSides = 100
@@ -91,54 +87,14 @@ FOVCircle.Color = Color3.new(1, 1, 1)
 FOVCircle.Transparency = 0.5
 FOVCircle.Visible = true
 
--- Update Circle Position
 game:GetService("RunService").RenderStepped:Connect(function()
     if FOVCircle then
         FOVCircle.Position = game:GetService("UserInputService"):GetMouseLocation()
     end
 end)
 
--- Clean up
 game:GetService("CoreGui").ChildRemoved:Connect(function(child)
     if child.Name == "ScreenGui" then
         FOVCircle:Remove()
-    end
-end)
-
--- Visuals Tab
-local VisualsGroup = Tabs.Visuals:AddLeftGroupbox('Visual Features')
--- Add your visual features here
-
--- UI Settings Tab
-local UISettingsTab = Tabs['UI Settings']
-ThemeManager:ApplyToTab(UISettingsTab)
-SaveManager:BuildConfigSection(UISettingsTab)
-
--- Set up the library toggle keybind
-Library.ToggleKeybind = Options.MenuKeybind
-
--- Set up watermark
-Library:SetWatermarkVisibility(true)
-Library:SetWatermark('Universal Script')
-
--- Load autoload config
-SaveManager:LoadAutoloadConfig()
-
--- Handle aimbot activation
-local UIS = game:GetService("UserInputService")
-
-UIS.InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed and input.UserInputType == Enum.UserInputType.MouseButton2 then
-        if Toggles.AimbotEnabled then
-            Toggles.AimbotEnabled.Value = true
-        end
-    end
-end)
-
-UIS.InputEnded:Connect(function(input, gameProcessed)
-    if not gameProcessed and input.UserInputType == Enum.UserInputType.MouseButton2 then
-        if Toggles.AimbotEnabled then
-            Toggles.AimbotEnabled.Value = false
-        end
     end
 end)
