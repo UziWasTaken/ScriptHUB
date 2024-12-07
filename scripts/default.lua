@@ -29,8 +29,20 @@ local Tabs = {
     ['UI Settings'] = Window:AddTab('UI Settings')
 }
 
+-- Create FOV Circle first
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Thickness = 2
+FOVCircle.NumSides = 100
+FOVCircle.Radius = 100
+FOVCircle.Filled = false
+FOVCircle.Color = Color3.new(1, 1, 1)
+FOVCircle.Transparency = 0.5
+FOVCircle.Visible = true
+
 -- Main Tab
 local MainGroup = Tabs.Main:AddLeftGroupbox('Player Features')
+
+-- Create toggles
 MainGroup:AddToggle('WalkSpeedEnabled', {
     Text = 'WalkSpeed Enabled',
     Default = false,
@@ -77,16 +89,7 @@ ThemeManager:ApplyToTab(Tabs['UI Settings'])
 -- Load autoload config
 SaveManager:LoadAutoloadConfig()
 
--- FOV Circle
-local FOVCircle = Drawing.new("Circle")
-FOVCircle.Thickness = 2
-FOVCircle.NumSides = 100
-FOVCircle.Radius = 100
-FOVCircle.Filled = false
-FOVCircle.Color = Color3.new(1, 1, 1)
-FOVCircle.Transparency = 0.5
-FOVCircle.Visible = true
-
+-- Update FOV Circle position (after everything is created)
 game:GetService("RunService").RenderStepped:Connect(function()
     if FOVCircle then
         FOVCircle.Position = game:GetService("UserInputService"):GetMouseLocation()
