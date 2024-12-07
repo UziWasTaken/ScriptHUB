@@ -17,6 +17,12 @@ local Tabs = {
     ['UI Settings'] = Window:AddTab('UI Settings'),
 }
 
+-- Add these near the top of the file after creating Tabs
+local Flags = {
+    AimbotEnabled = false,
+    ESPEnabled = false
+}
+
 -- Main features group
 local MainGroup = Tabs.Main:AddLeftGroupbox('Player Features')
 
@@ -123,6 +129,31 @@ AimbotGroup:AddDropdown('AimbotTargetPart', {
     Text = 'Target Part',
     Tooltip = 'Body part to aim at',
 })
+
+-- Connect Aimbot callbacks
+Toggles.AimbotEnabled:OnChanged(function()
+    Flags.AimbotEnabled = Toggles.AimbotEnabled.Value
+end)
+
+Toggles.AimbotTeamCheck:OnChanged(function()
+    Flags.TeamCheck = Toggles.AimbotTeamCheck.Value
+end)
+
+Toggles.AimbotVisibilityCheck:OnChanged(function()
+    Flags.VisibilityCheck = Toggles.AimbotVisibilityCheck.Value
+end)
+
+Options.AimbotFOV:OnChanged(function()
+    Flags.AimbotFOV = Options.AimbotFOV.Value
+end)
+
+Options.AimbotSmoothness:OnChanged(function()
+    Flags.Smoothness = Options.AimbotSmoothness.Value
+end)
+
+Options.AimbotTargetPart:OnChanged(function()
+    Flags.TargetPart = Options.AimbotTargetPart.Value
+end)
 
 -- Aimbot implementation
 local RunService = game:GetService("RunService")
@@ -240,6 +271,35 @@ ESPGroup:AddSlider('ESPMaxDistance', {
     Suffix = ' studs',
 })
 
+-- Connect ESP callbacks
+Toggles.ESPEnabled:OnChanged(function()
+    Flags.ESPEnabled = Toggles.ESPEnabled.Value
+end)
+
+Toggles.BoxESP:OnChanged(function()
+    Flags.BoxESP = Toggles.BoxESP.Value
+end)
+
+Toggles.TracerESP:OnChanged(function()
+    Flags.TracerESP = Toggles.TracerESP.Value
+end)
+
+Toggles.NameESP:OnChanged(function()
+    Flags.NameESP = Toggles.NameESP.Value
+end)
+
+Toggles.DistanceESP:OnChanged(function()
+    Flags.DistanceESP = Toggles.DistanceESP.Value
+end)
+
+Toggles.TeamCheck:OnChanged(function()
+    Flags.TeamCheck = Toggles.TeamCheck.Value
+end)
+
+Options.ESPMaxDistance:OnChanged(function()
+    Flags.MaxDistance = Options.ESPMaxDistance.Value
+end)
+
 -- ESP Implementation
 if not Drawing then
     warn("Your executor does not support the Drawing library!")
@@ -326,7 +386,7 @@ local function UpdateESP()
             continue
         end
         
-        if not Toggles.ESPEnabled.Value then
+        if not Flags.ESPEnabled then
             esp.Box.Visible = false
             esp.Name.Visible = false
             esp.Distance.Visible = false
@@ -335,7 +395,7 @@ local function UpdateESP()
         end
         
         -- Update Box ESP
-        if Toggles.BoxESP.Value then
+        if Flags.BoxESP then
             local size = (Camera:WorldToViewportPoint(humanoidRootPart.Position + Vector3.new(2, 3, 0)).X - Camera:WorldToViewportPoint(humanoidRootPart.Position + Vector3.new(-2, -3, 0)).X) / 2
             esp.Box.Size = Vector2.new(size, size * 2)
             esp.Box.Position = Vector2.new(vector.X - size / 2, vector.Y - size)
@@ -345,7 +405,7 @@ local function UpdateESP()
         end
         
         -- Update Name ESP
-        if Toggles.NameESP.Value then
+        if Flags.NameESP then
             esp.Name.Text = player.Name
             esp.Name.Position = Vector2.new(vector.X, vector.Y - esp.Box.Size.Y - 15)
             esp.Name.Visible = true
@@ -354,7 +414,7 @@ local function UpdateESP()
         end
         
         -- Update Distance ESP
-        if Toggles.DistanceESP.Value then
+        if Flags.DistanceESP then
             esp.Distance.Text = math.floor(distance) .. " studs"
             esp.Distance.Position = Vector2.new(vector.X, vector.Y + esp.Box.Size.Y)
             esp.Distance.Visible = true
@@ -363,7 +423,7 @@ local function UpdateESP()
         end
         
         -- Update Tracer ESP
-        if Toggles.TracerESP.Value then
+        if Flags.TracerESP then
             esp.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
             esp.Tracer.To = Vector2.new(vector.X, vector.Y)
             esp.Tracer.Visible = true
