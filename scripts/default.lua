@@ -16,6 +16,7 @@ local Window = Library:CreateWindow({
 
 local Tabs = {
     Main = Window:AddTab('Main'),
+    Misc = Window:AddTab('Misc'),
     ['UI Settings'] = Window:AddTab('UI Settings'),
     Console = Window:AddTab('Console'),
 }
@@ -178,6 +179,15 @@ end
 
 -- Example usage (you can add this where needed):
 -- LogError("Something went wrong!")
+
+-- Add Misc features group (add this before UI Settings section)
+local MiscGroup = Tabs.Misc:AddLeftGroupbox('Utility')
+
+MiscGroup:AddButton('Rejoin Game', function()
+    local ts = game:GetService("TeleportService")
+    local p = game:GetService("Players").LocalPlayer
+    ts:Teleport(game.PlaceId, p)
+end)
 
 -- UI Settings
 local SettingsGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
