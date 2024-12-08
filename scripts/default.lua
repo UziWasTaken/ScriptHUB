@@ -187,8 +187,11 @@ MiscGroup:AddButton('Rejoin Game', function()
     local ts = game:GetService("TeleportService")
     local p = game:GetService("Players").LocalPlayer
     
-    -- Set a flag in registry to indicate we want to auto-run after rejoin
-    game:GetService("ReplicatedStorage"):SetAttribute("AutoRerun", true)
+    -- Queue the script to run after teleport
+    queue_on_teleport([[
+        task.wait(1)  -- Small delay to ensure game loads
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/UziWasTaken/ScriptHUB/main/loader.lua'))()
+    ]])
     
     ts:Teleport(game.PlaceId, p)
 end)
