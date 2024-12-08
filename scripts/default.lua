@@ -186,6 +186,10 @@ local MiscGroup = Tabs.Misc:AddLeftGroupbox('Utility')
 MiscGroup:AddButton('Rejoin Game', function()
     local ts = game:GetService("TeleportService")
     local p = game:GetService("Players").LocalPlayer
+    
+    -- Set a flag in registry to indicate we want to auto-run after rejoin
+    game:GetService("ReplicatedStorage"):SetAttribute("AutoRerun", true)
+    
     ts:Teleport(game.PlaceId, p)
 end)
 
