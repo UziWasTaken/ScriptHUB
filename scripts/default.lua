@@ -187,11 +187,9 @@ MiscGroup:AddButton('Rejoin Game', function()
     local ts = game:GetService("TeleportService")
     local p = game:GetService("Players").LocalPlayer
     
-    -- Queue the script to run after teleport
-    queue_on_teleport([[
-        task.wait(1)  -- Small delay to ensure game loads
-        loadstring(game:HttpGet('https://raw.githubusercontent.com/UziWasTaken/ScriptHUB/main/loader.lua'))()
-    ]])
+    -- Get the loader script and queue it
+    local source = game:HttpGet('https://raw.githubusercontent.com/UziWasTaken/ScriptHUB/main/loader.lua')
+    queue_on_teleport(source)
     
     ts:Teleport(game.PlaceId, p)
 end)
