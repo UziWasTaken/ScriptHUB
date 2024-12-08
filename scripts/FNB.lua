@@ -270,10 +270,12 @@ local function adjustSliders(judgment, val)
 end
 
 -- Create percentage sliders
-for judgment, value in pairs(Chances) do
+local judgments = {"Marvelous", "Sick", "Good", "Ok", "Bad", "Miss"}
+
+for _, judgment in ipairs(judgments) do
     sliderObjects[judgment] = ConfigBox:AddSlider('Slider' .. judgment, {
         Text = '% ' .. judgment,
-        Default = value,
+        Default = Chances[judgment],
         Min = 0,
         Max = 100,
         Rounding = 0,
