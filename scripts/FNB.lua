@@ -1,10 +1,10 @@
 local function import(s)
-    return loadstring(game:HttpGet( ("https://raw.githubusercontent.com/UziWasTaken/ScriptHUB/refs/heads/main/scripts/fnb/%s.lua"):format(s) ))()
+    return loadstring(game:HttpGet( ("https://raw.githubusercontent.com/stavratum/lua/main/%s.lua"):format(s) ))()
 end
 
-import("hooks/fnb_hooks")
+import("fnb/hooks")
 local Connections = import("Connections")
-local Util = import("util")
+local Util = import("fnb/util")
 
 local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
 
