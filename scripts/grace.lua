@@ -236,7 +236,12 @@ setupGuiRemoval('RemoveGoatGui', 'GOATPORT')
 
 -- UI Settings
 local SettingsGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
-SettingsGroup:AddButton('Unload', function() Library:Unload() end)
+SettingsGroup:AddButton('Unload', function() 
+    -- Clear and destroy console before unloading UI
+    rconsoleclear()
+    rconsoledestroy()
+    Library:Unload() 
+end)
 SettingsGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Menu keybind' })
 
 Library.ToggleKeybind = Options.MenuKeybind
