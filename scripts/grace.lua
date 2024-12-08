@@ -56,6 +56,13 @@ MainGroup:AddToggle('RemoveGoatGui', {
     Tooltip = 'Removes goat GUI',
 })
 
+-- Add Fullbright toggle
+MainGroup:AddToggle('Fullbright', {
+    Text = 'Fullbright',
+    Default = false,
+    Tooltip = 'Removes all darkness from the game',
+})
+
 -- Console features group
 local ConsoleGroup = Tabs.Console:AddLeftGroupbox('Console Settings')
 
@@ -138,6 +145,69 @@ Toggles.EntityRemoval:OnChanged(function()
     else
         if connections.entity then
             connections.entity:Disconnect()
+        end
+    end
+end)
+
+-- Implement Fullbright callback
+Toggles.Fullbright:OnChanged(function()
+    if Toggles.Fullbright.Value then
+        -- Store original lighting properties
+        connections.fullbrightProps = {
+            Brightness = game:GetService("Lighting").Brightness,
+            ClockTime = game:GetService("Lighting").ClockTime,
+            FogEnd = game:GetService("Lighting").FogEnd,
+            GlobalShadows = game:GetService("Lighting").GlobalShadows,
+            Ambient = game:GetService("Lighting").Ambient
+        }
+
+        -- Apply Fullbright
+        game:GetService("Lighting").Brightness = 2
+        game:GetService("Lighting").ClockTime = 14
+        game:GetService("Lighting").FogEnd = 100000
+        game:GetService("Lighting").GlobalShadows = false
+        game:GetService("Lighting").Ambient = Color3.fromRGB(178, 178, 178)
+
+        -- Remove all lighting effects
+        connections.fullbright = game:GetService("Lighting").DescendantAdded:Connect(function(descendant)
+            if descendant:IsA("BlurEffect") or 
+               descendant:IsA("ColorCorrectionEffect") or 
+               descendant:IsA("BloomEffect") or 
+               descendant:IsA("SunRaysEffect") then
+                descendant.Enabled = false
+            end
+        end)
+
+        -- Disable existing effects
+        for _, effect in pairs(game:GetService("Lighting"):GetDescendants()) do
+            if effect:IsA("BlurEffect") or 
+               effect:IsA("ColorCorrectionEffect") or 
+               effect:IsA("BloomEffect") or 
+               effect:IsA("SunRaysEffect") then
+                effect.Enabled = false
+            end
+        end
+    else
+        -- Restore original lighting properties
+        if connections.fullbrightProps then
+            for property, value in pairs(connections.fullbrightProps) do
+                game:GetService("Lighting")[property] = value
+            end
+        end
+
+        -- Disconnect the effect remover
+        if connections.fullbright then
+            connections.fullbright:Disconnect()
+        end
+
+        -- Re-enable effects
+        for _, effect in pairs(game:GetService("Lighting"):GetDescendants()) do
+            if effect:IsA("BlurEffect") or 
+               effect:IsA("ColorCorrectionEffect") or 
+               effect:IsA("BloomEffect") or 
+               effect:IsA("SunRaysEffect") then
+                effect.Enabled = true
+            end
         end
     end
 end)
