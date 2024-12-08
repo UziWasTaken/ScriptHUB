@@ -4,6 +4,10 @@ local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
 local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
 local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
 
+local RunService = game:GetService("RunService")
+local LocalPlayer = game.Players.LocalPlayer
+local Connections = {}
+
 local Window = Library:CreateWindow({
     Title = 'Universal Script',
     Center = true,
@@ -12,8 +16,8 @@ local Window = Library:CreateWindow({
 
 local Tabs = {
     Main = Window:AddTab('Main'),
-    Aimbot = Window:AddTab('Aimbot'),
     ['UI Settings'] = Window:AddTab('UI Settings'),
+    Console = Window:AddTab('Console'),
 }
 
 -- Main features group
@@ -47,6 +51,12 @@ MainGroup:AddSlider('JumpPowerValue', {
     Rounding = 0,
 })
 
+MainGroup:AddToggle('NoClipEnabled', {
+    Text = 'NoClip',
+    Default = false,
+    Tooltip = 'Enables NoClip with Air Walk',
+})
+
 -- Implement feature callbacks
 Toggles.WalkSpeedEnabled:OnChanged(function()
     if Toggles.WalkSpeedEnabled.Value then
@@ -76,120 +86,98 @@ Options.JumpPowerValue:OnChanged(function()
     end
 end)
 
--- Add after the Main features group but before UI Settings
-local AimbotGroup = Tabs.Aimbot:AddLeftGroupbox('Aimbot Settings')
-
-AimbotGroup:AddToggle('AimbotEnabled', {
-    Text = 'Enable Aimbot',
-    Default = false,
-    Tooltip = 'Toggles aimbot functionality',
-})
-
-AimbotGroup:AddToggle('AimbotTeamCheck', {
-    Text = 'Team Check',
-    Default = true,
-    Tooltip = 'Prevents aiming at teammates',
-})
-
-AimbotGroup:AddToggle('AimbotVisibilityCheck', {
-    Text = 'Visibility Check',
-    Default = true,
-    Tooltip = 'Only target visible players',
-})
-
-AimbotGroup:AddSlider('AimbotFOV', {
-    Text = 'FOV',
-    Default = 100,
-    Min = 0,
-    Max = 360,
-    Rounding = 0,
-    Tooltip = 'Field of View for target detection',
-})
-
-AimbotGroup:AddSlider('AimbotSmoothness', {
-    Text = 'Smoothness',
-    Default = 1,
-    Min = 1,
-    Max = 10,
-    Rounding = 1,
-    Tooltip = 'Higher = smoother aiming',
-})
-
-AimbotGroup:AddDropdown('AimbotTargetPart', {
-    Values = {'Head', 'HumanoidRootPart', 'Torso'},
-    Default = 1,
-    Multi = false,
-    Text = 'Target Part',
-    Tooltip = 'Body part to aim at',
-})
-
--- Aimbot implementation
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
-local RunService = game:GetService("RunService")
-
-local function GetClosestPlayer()
-    if not Toggles.AimbotEnabled.Value then return end
-    
-    local closestPlayer = nil
-    local shortestDistance = Options.AimbotFOV.Value
-
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            -- Team Check
-            if Toggles.AimbotTeamCheck.Value and player.Team == LocalPlayer.Team then
-                continue
-            end
-
-            local character = player.Character
-            if not character or not character:FindFirstChild(Options.AimbotTargetPart.Value) then
-                continue
-            end
-
-            local targetPart = character[Options.AimbotTargetPart.Value]
-            local humanoid = character:FindFirstChild("Humanoid")
-            
-            if humanoid and humanoid.Health <= 0 then
-                continue
-            end
-
-            -- Visibility Check
-            if Toggles.AimbotVisibilityCheck.Value then
-                local ray = Ray.new(Camera.CFrame.Position, (targetPart.Position - Camera.CFrame.Position).Unit * 1000)
-                local hit = workspace:FindPartOnRayWithIgnoreList(ray, {LocalPlayer.Character, character})
-                if hit then continue end
-            end
-
-            local screenPoint = Camera:WorldToScreenPoint(targetPart.Position)
-            local vectorDistance = (Vector2.new(screenPoint.X, screenPoint.Y) - Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)).Magnitude
-
-            if vectorDistance < shortestDistance then
-                closestPlayer = player
-                shortestDistance = vectorDistance
-            end
-        end
+Toggles.NoClipEnabled:OnChanged(function(bool)
+    if Connections.NoClip then
+        Connections.NoClip:Disconnect()
+        Connections.NoClip = nil
     end
 
-    return closestPlayer
-end
+    -- Create air walk platform only once and store it
+    if not Connections.AirWalkPart then
+        Connections.AirWalkPart = Instance.new("Part")
+        Connections.AirWalkPart.Size = Vector3.new(5, 1, 5)
+        Connections.AirWalkPart.Anchored = true
+        Connections.AirWalkPart.Transparency = 1
+        Connections.AirWalkPart.Name = "AirWalkPart"
+        Connections.AirWalkPart.CanCollide = true
+    end
 
-RunService.RenderStepped:Connect(function()
-    if Toggles.AimbotEnabled.Value then
-        local target = GetClosestPlayer()
-        if target and target.Character then
-            local targetPart = target.Character[Options.AimbotTargetPart.Value]
-            local targetPos = Camera:WorldToScreenPoint(targetPart.Position)
-            local mousePos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-            local aimPos = Vector2.new(targetPos.X, targetPos.Y)
-            
-            mousemoverel(
-                (aimPos.X - mousePos.X) / Options.AimbotSmoothness.Value,
-                (aimPos.Y - mousePos.Y) / Options.AimbotSmoothness.Value
-            )
+    if bool then
+        Connections.NoClip = RunService.Stepped:Connect(function()
+            if LocalPlayer.Character then
+                -- NoClip
+                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+
+                -- Air Walk
+                local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if root then
+                    Connections.AirWalkPart.CFrame = CFrame.new(root.Position.X, root.Position.Y - 3.5, root.Position.Z)
+                    if not Connections.AirWalkPart.Parent then
+                        Connections.AirWalkPart.Parent = workspace
+                    end
+                end
+            end
+        end)
+    else
+        -- Restore collision
+        if LocalPlayer.Character then
+            for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
+        end
+
+        -- Remove air walk platform
+        if Connections.AirWalkPart then
+            Connections.AirWalkPart.Parent = nil
         end
     end
 end)
+
+-- Console features group
+local ConsoleGroup = Tabs.Console:AddLeftGroupbox('Console Settings')
+
+ConsoleGroup:AddButton('Create Console', function()
+    rconsolesettitle("Universal Script Console")
+    rconsolecreate()
+    rconsoleprint("@@RED@@")
+    rconsoleprint("Error logging console created.\n")
+end)
+
+ConsoleGroup:AddButton('Clear Console', function()
+    rconsoleclear()
+    rconsoleprint("@@RED@@")
+end)
+
+ConsoleGroup:AddButton('Destroy Console', function()
+    rconsoledestroy()
+end)
+
+ConsoleGroup:AddInput('ConsoleTitle', {
+    Default = 'Universal Script Console',
+    Numeric = false,
+    Finished = false,
+    Text = 'Console Title',
+    Tooltip = 'Set the title of the console window',
+    Placeholder = 'Enter console title...',
+    Callback = function(value)
+        rconsolesettitle(value)
+    end
+})
+
+-- Add error logging function
+local function LogError(message)
+    rconsoleprint("@@RED@@")
+    rconsoleprint("[ERROR] " .. tostring(message) .. "\n")
+end
+
+-- Example usage (you can add this where needed):
+-- LogError("Something went wrong!")
 
 -- UI Settings
 local SettingsGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
