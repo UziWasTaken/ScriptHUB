@@ -1,261 +1,147 @@
-local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
+--[[
+    Universal Script Loader
+    Version: 1.0
+    Author: UziWasTaken
+    Description: A universal script loader that detects and loads game-specific scripts
+]]
 
-local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
-local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
-local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
-
-local Window = Library:CreateWindow({
-    Title = 'Grace Script',
-    Center = true,
-    AutoShow = true,
-})
-
-local Tabs = {
-    Main = Window:AddTab('Main'),
-    Console = Window:AddTab('Console'),
-    ['UI Settings'] = Window:AddTab('UI Settings'),
+-- Constants
+local CONFIG = {
+    TITLE = "Script Loader",
+    VERSION = "1.0",
+    AUTHOR = "UziWasTaken",
+    LOADING_FRAMES = {"|", "/", "-", "\\"},
+    SCRIPT_URLS = {
+        GRACE = "https://raw.githubusercontent.com/UziWasTaken/ScriptHUB/refs/heads/main/scripts/grace.lua",
+        FNB = "https://raw.githubusercontent.com/UziWasTaken/ScriptHUB/main/scripts/FNB.lua",
+        DEFAULT = "https://raw.githubusercontent.com/UziWasTaken/ScriptHUB/main/scripts/default.lua"
+    },
+    COLORS = {
+        CYAN = "@@LIGHT_CYAN@@",
+        BLUE = "@@LIGHT_BLUE@@",
+        MAGENTA = "@@LIGHT_MAGENTA@@",
+        YELLOW = "@@YELLOW@@",
+        GREEN = "@@LIGHT_GREEN@@",
+        RED = "@@RED@@"
+    }
 }
 
--- Main features group
-local MainGroup = Tabs.Main:AddLeftGroupbox('Game Features')
+-- Services
+local MarketplaceService = game:GetService("MarketplaceService")
 
--- Add toggles for each feature
-MainGroup:AddToggle('ParticleBoost', {
-    Text = 'Enhanced Particles',
-    Default = false,
-    Tooltip = 'Increases particle rate by 10x',
-})
-
-MainGroup:AddToggle('AutoLever', {
-    Text = 'Auto Lever Teleport',
-    Default = false,
-    Tooltip = 'Automatically teleports levers to you',
-})
-
-MainGroup:AddToggle('EntityRemoval', {
-    Text = 'Remove Entities',
-    Default = false,
-    Tooltip = 'Removes dangerous entities',
-})
-
-MainGroup:AddToggle('RemoveEyeGui', {
-    Text = 'Remove Eye GUI',
-    Default = false,
-    Tooltip = 'Removes eye parasites GUI',
-})
-
-MainGroup:AddToggle('RemoveSmileGui', {
-    Text = 'Remove Smile GUI',
-    Default = false,
-    Tooltip = 'Removes smile GUI',
-})
-
-MainGroup:AddToggle('RemoveGoatGui', {
-    Text = 'Remove Goat GUI',
-    Default = false,
-    Tooltip = 'Removes goat GUI',
-})
-
--- Add Fullbright toggle
-MainGroup:AddToggle('Fullbright', {
-    Text = 'Fullbright',
-    Default = false,
-    Tooltip = 'Removes all darkness from the game',
-})
-
--- Console features group
-local ConsoleGroup = Tabs.Console:AddLeftGroupbox('Console Settings')
-
-ConsoleGroup:AddButton('Create Console', function()
-    rconsolesettitle("Grace Script Console")
+-- Initialize console
+local function initializeConsole()
+    rconsolesettitle(CONFIG.TITLE)
     rconsolecreate()
-    rconsoleprint("@@LIGHT_CYAN@@")
-    rconsoleprint("Grace Script Console Initialized\n")
-end)
-
-ConsoleGroup:AddButton('Clear Console', function()
     rconsoleclear()
-    rconsoleprint("@@LIGHT_CYAN@@")
-end)
-
-ConsoleGroup:AddButton('Destroy Console', function()
-    rconsoledestroy()
-end)
-
-ConsoleGroup:AddInput('ConsoleTitle', {
-    Default = 'Grace Script Console',
-    Numeric = false,
-    Finished = false,
-    Text = 'Console Title',
-    Tooltip = 'Set the title of the console window',
-    Placeholder = 'Enter console title...',
-    Callback = function(value)
-        rconsolesettitle(value)
-    end
-})
-
--- Implement feature callbacks
-local connections = {}
-
-Toggles.ParticleBoost:OnChanged(function()
-    if Toggles.ParticleBoost.Value then
-        connections.particle = workspace.DescendantAdded:Connect(function(descendant)
-            if descendant:IsA("ParticleEmitter") then
-                descendant.Rate = descendant.Rate * 10
-            end
-        end)
-    else
-        if connections.particle then
-            connections.particle:Disconnect()
-        end
-    end
-end)
-
-Toggles.AutoLever:OnChanged(function()
-    if Toggles.AutoLever.Value then
-        connections.lever = workspace.DescendantAdded:Connect(function(descendant)
-            if descendant.Name == "base" and descendant:IsA("BasePart") then
-                local player = game.Players.LocalPlayer
-                if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    descendant.Position = player.Character.HumanoidRootPart.Position
-                    game.StarterGui:SetCore("SendNotification", {
-                        Title = "levers moved",
-                        Text = "door has been opened",
-                        Duration = 3
-                    })
-                end
-            end
-        end)
-    else
-        if connections.lever then
-            connections.lever:Disconnect()
-        end
-    end
-end)
-
-Toggles.EntityRemoval:OnChanged(function()
-    if Toggles.EntityRemoval.Value then
-        connections.entity = workspace.DescendantAdded:Connect(function(descendant)
-            if descendant.Name == "eye" or descendant.Name == "elkman" or 
-               descendant.Name == "Rush" or descendant.Name == "Worm" or 
-               descendant.Name == "eyePrime" then
-                descendant:Destroy()
-            end
-        end)
-    else
-        if connections.entity then
-            connections.entity:Disconnect()
-        end
-    end
-end)
-
--- Implement Fullbright callback
-Toggles.Fullbright:OnChanged(function()
-    if Toggles.Fullbright.Value then
-        -- Store original lighting properties
-        connections.fullbrightProps = {
-            Brightness = game:GetService("Lighting").Brightness,
-            ClockTime = game:GetService("Lighting").ClockTime,
-            FogEnd = game:GetService("Lighting").FogEnd,
-            GlobalShadows = game:GetService("Lighting").GlobalShadows,
-            Ambient = game:GetService("Lighting").Ambient
-        }
-
-        -- Apply Fullbright
-        game:GetService("Lighting").Brightness = 2
-        game:GetService("Lighting").ClockTime = 14
-        game:GetService("Lighting").FogEnd = 100000
-        game:GetService("Lighting").GlobalShadows = false
-        game:GetService("Lighting").Ambient = Color3.fromRGB(178, 178, 178)
-
-        -- Remove all lighting effects
-        connections.fullbright = game:GetService("Lighting").DescendantAdded:Connect(function(descendant)
-            if descendant:IsA("BlurEffect") or 
-               descendant:IsA("ColorCorrectionEffect") or 
-               descendant:IsA("BloomEffect") or 
-               descendant:IsA("SunRaysEffect") then
-                descendant.Enabled = false
-            end
-        end)
-
-        -- Disable existing effects
-        for _, effect in pairs(game:GetService("Lighting"):GetDescendants()) do
-            if effect:IsA("BlurEffect") or 
-               effect:IsA("ColorCorrectionEffect") or 
-               effect:IsA("BloomEffect") or 
-               effect:IsA("SunRaysEffect") then
-                effect.Enabled = false
-            end
-        end
-    else
-        -- Restore original lighting properties
-        if connections.fullbrightProps then
-            for property, value in pairs(connections.fullbrightProps) do
-                game:GetService("Lighting")[property] = value
-            end
-        end
-
-        -- Disconnect the effect remover
-        if connections.fullbright then
-            connections.fullbright:Disconnect()
-        end
-
-        -- Re-enable effects
-        for _, effect in pairs(game:GetService("Lighting"):GetDescendants()) do
-            if effect:IsA("BlurEffect") or 
-               effect:IsA("ColorCorrectionEffect") or 
-               effect:IsA("BloomEffect") or 
-               effect:IsA("SunRaysEffect") then
-                effect.Enabled = true
-            end
-        end
-    end
-end)
-
--- GUI Removal functions
-local function setupGuiRemoval(toggleName, guiName)
-    Toggles[toggleName]:OnChanged(function()
-        if Toggles[toggleName].Value then
-            connections[toggleName] = game:GetService("RunService").Heartbeat:Connect(function()
-                local gui = game.Players.LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild(guiName)
-                if gui then
-                    gui:Destroy()
-                end
-            end)
-        else
-            if connections[toggleName] then
-                connections[toggleName]:Disconnect()
-            end
-        end
-    end)
 end
 
-setupGuiRemoval('RemoveEyeGui', 'eyegui')
-setupGuiRemoval('RemoveSmileGui', 'smilegui')
-setupGuiRemoval('RemoveGoatGui', 'GOATPORT')
+-- UI Functions
+local function printLogo()
+    rconsoleprint(CONFIG.COLORS.CYAN)
+    rconsoleprint([[
+    ╔═══════════════════════════════════════╗
+    ║           SCRIPT LOADER v1.0          ║
+    ║         Created by UziWasTaken        ║
+    ╚═══════════════════════════════════════╝
+    ]])
+end
 
--- UI Settings
-local SettingsGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
-SettingsGroup:AddButton('Unload', function() 
-    -- Clear and destroy console before unloading UI
-    rconsoleclear()
-    rconsoledestroy()
-    Library:Unload() 
-end)
-SettingsGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Menu keybind' })
+local function animateLoading(text)
+    for i = 1, 15 do
+        rconsoleprint(CONFIG.COLORS.BLUE)
+        rconsoleprint("\r" .. text .. " " .. CONFIG.LOADING_FRAMES[i % 4 + 1])
+        task.wait(0.1)
+    end
+    rconsoleprint("\n")
+end
 
-Library.ToggleKeybind = Options.MenuKeybind
+local function log(color, message)
+    rconsoleprint(color)
+    rconsoleprint(message .. "\n")
+end
 
--- Theme and Save Manager Setup
-ThemeManager:SetLibrary(Library)
-SaveManager:SetLibrary(Library)
-SaveManager:IgnoreThemeSettings()
-SaveManager:SetIgnoreIndexes({ 'MenuKeybind' })
+-- Game Detection
+local function getGameInfo()
+    local success, gameInfo = pcall(function()
+        return MarketplaceService:GetProductInfo(game.PlaceId)
+    end)
+    
+    if not success then
+        log(CONFIG.COLORS.RED, "➤ Error getting game info: " .. tostring(gameInfo))
+        return nil
+    end
+    
+    return gameInfo
+end
 
-ThemeManager:SetFolder('GraceScript')
-SaveManager:SetFolder('GraceScript/GameConfigs')
+local function detectGameScript()
+    local gameInfo = getGameInfo()
+    if not gameInfo then return CONFIG.SCRIPT_URLS.DEFAULT end
+    
+    -- Debug logging
+    log(CONFIG.COLORS.YELLOW, "➤ Debug - Place ID: " .. tostring(game.PlaceId))
+    log(CONFIG.COLORS.YELLOW, "➤ Debug - Game Name: " .. tostring(gameInfo.Name))
+    log(CONFIG.COLORS.YELLOW, "➤ Debug - Creator: " .. tostring(gameInfo.Creator.Name))
+    
+    -- Game detection logic
+    local gameName = gameInfo.Name
+    if gameName:match("[Gg]race") then
+        log(CONFIG.COLORS.GREEN, "➤ Debug - Matched Grace game pattern")
+        return CONFIG.SCRIPT_URLS.GRACE
+    elseif game.PlaceId == 7603193259 then
+        return CONFIG.SCRIPT_URLS.FNB
+    end
+    
+    log(CONFIG.COLORS.RED, "➤ Debug - No match found, using default script")
+    return CONFIG.SCRIPT_URLS.DEFAULT
+end
 
-SaveManager:BuildConfigSection(Tabs['UI Settings'])
-ThemeManager:ApplyToTab(Tabs['UI Settings'])
+-- Script Loading
+local function loadScript(scriptUrl)
+    local success, result = pcall(function()
+        local scriptContent = game:HttpGet(scriptUrl)
+        return loadstring(scriptContent)()
+    end)
+    
+    if success then
+        log(CONFIG.COLORS.GREEN, "✓ Script loaded successfully!")
+    else
+        log(CONFIG.COLORS.RED, "✗ Error loading script: " .. tostring(result))
+    end
+    
+    return success
+end
 
-SaveManager:LoadAutoloadConfig() 
+-- Main Execution
+local function main()
+    -- Initialize
+    initializeConsole()
+    printLogo()
+    rconsoleprint("\n")
+    
+    -- Show executor info
+    local executor, version = identifyexecutor()
+    log(CONFIG.COLORS.MAGENTA, "➤ Executor: " .. executor .. " (v" .. version .. ")")
+    task.wait(0.5)
+    
+    -- Detect and load game script
+    local gameInfo = getGameInfo()
+    if gameInfo then
+        log(CONFIG.COLORS.GREEN, "➤ Detected Game: " .. gameInfo.Name)
+    end
+    task.wait(0.5)
+    
+    local scriptUrl = detectGameScript()
+    animateLoading("Fetching script URL")
+    log(CONFIG.COLORS.GREEN, "➤ Script URL: " .. scriptUrl)
+    task.wait(0.5)
+    
+    animateLoading("Loading script")
+    loadScript(scriptUrl)
+    
+    task.wait(2)
+end
+
+-- Start the loader
+main()
