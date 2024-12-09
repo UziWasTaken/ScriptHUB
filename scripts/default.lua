@@ -1,15 +1,50 @@
-local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
+--[[
+    Universal Script
+    Version: 1.0
+    Author: UziWasTaken
+    Description: A universal script with common game features and utilities
+]]
 
-local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
-local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
-local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
+-- Constants and Configuration
+local CONFIG = {
+    UI = {
+        TITLE = 'Universal Script',
+        REPO = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/',
+    },
+    PLAYER = {
+        DEFAULT_WALKSPEED = 16,
+        DEFAULT_JUMPPOWER = 50,
+        MIN_WALKSPEED = 16,
+        MAX_WALKSPEED = 500,
+        MIN_JUMPPOWER = 50,
+        MAX_JUMPPOWER = 500
+    },
+    NOCLIP = {
+        PLATFORM_SIZE = Vector3.new(5, 1, 5),
+        PLATFORM_OFFSET = 3.5
+    }
+}
 
+-- Services
 local RunService = game:GetService("RunService")
-local LocalPlayer = game.Players.LocalPlayer
-local Connections = {}
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
+-- Initialize UI Library
+local Library = loadstring(game:HttpGet(CONFIG.UI.REPO .. 'Library.lua'))()
+local ThemeManager = loadstring(game:HttpGet(CONFIG.UI.REPO .. 'addons/ThemeManager.lua'))()
+local SaveManager = loadstring(game:HttpGet(CONFIG.UI.REPO .. 'addons/SaveManager.lua'))()
+
+-- State Management
+local State = {
+    Connections = {},
+    AirWalkPart = nil
+}
+
+-- Create Window and Tabs
 local Window = Library:CreateWindow({
-    Title = 'Universal Script',
+    Title = CONFIG.UI.TITLE,
     Center = true,
     AutoShow = true,
 })
@@ -21,90 +56,37 @@ local Tabs = {
     Console = Window:AddTab('Console'),
 }
 
--- Main features group
-local MainGroup = Tabs.Main:AddLeftGroupbox('Player Features')
-
-MainGroup:AddToggle('WalkSpeedEnabled', {
-    Text = 'WalkSpeed Enabled',
-    Default = false,
-    Tooltip = 'Enables WalkSpeed modification',
-})
-
-MainGroup:AddSlider('WalkSpeedValue', {
-    Text = 'WalkSpeed',
-    Default = 16,
-    Min = 16,
-    Max = 500,
-    Rounding = 0,
-})
-
-MainGroup:AddToggle('JumpPowerEnabled', {
-    Text = 'JumpPower Enabled',
-    Default = false,
-    Tooltip = 'Enables JumpPower modification',
-})
-
-MainGroup:AddSlider('JumpPowerValue', {
-    Text = 'JumpPower',
-    Default = 50,
-    Min = 50,
-    Max = 500,
-    Rounding = 0,
-})
-
-MainGroup:AddToggle('NoClipEnabled', {
-    Text = 'NoClip',
-    Default = false,
-    Tooltip = 'Enables NoClip with Air Walk',
-})
-
--- Implement feature callbacks
-Toggles.WalkSpeedEnabled:OnChanged(function()
-    if Toggles.WalkSpeedEnabled.Value then
-        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Options.WalkSpeedValue.Value
-    else
-        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
+-- Player Movement Functions
+local function updateWalkSpeed(speed)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = speed
     end
-end)
+end
 
-Options.WalkSpeedValue:OnChanged(function()
-    if Toggles.WalkSpeedEnabled.Value then
-        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Options.WalkSpeedValue.Value
+local function updateJumpPower(power)
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.JumpPower = power
     end
-end)
+end
 
-Toggles.JumpPowerEnabled:OnChanged(function()
-    if Toggles.JumpPowerEnabled.Value then
-        game.Players.LocalPlayer.Character.Humanoid.JumpPower = Options.JumpPowerValue.Value
-    else
-        game.Players.LocalPlayer.Character.Humanoid.JumpPower = 50
-    end
-end)
-
-Options.JumpPowerValue:OnChanged(function()
-    if Toggles.JumpPowerEnabled.Value then
-        game.Players.LocalPlayer.Character.Humanoid.JumpPower = Options.JumpPowerValue.Value
-    end
-end)
-
-Toggles.NoClipEnabled:OnChanged(function(bool)
-    if Connections.NoClip then
-        Connections.NoClip:Disconnect()
-        Connections.NoClip = nil
+local function setupNoClip(enabled)
+    if State.Connections.NoClip then
+        State.Connections.NoClip:Disconnect()
+        State.Connections.NoClip = nil
     end
 
-    -- Create air walk platform only once and store it
-    if not Connections.AirWalkPart then
-        Connections.AirWalkPart = Instance.new("Part")
-        Connections.AirWalkPart.Size = Vector3.new(5, 1, 5)
-        Connections.AirWalkPart.Anchored = true
-        Connections.AirWalkPart.Transparency = 1
-        Connections.AirWalkPart.Name = "AirWalkPart"
-        Connections.AirWalkPart.CanCollide = true
+    -- Create air walk platform if needed
+    if not State.AirWalkPart then
+        State.AirWalkPart = Instance.new("Part")
+        State.AirWalkPart.Size = CONFIG.NOCLIP.PLATFORM_SIZE
+        State.AirWalkPart.Anchored = true
+        State.AirWalkPart.Transparency = 1
+        State.AirWalkPart.Name = "AirWalkPart"
+        State.AirWalkPart.CanCollide = true
     end
 
-    if bool then
-        Connections.NoClip = RunService.Stepped:Connect(function()
+    if enabled then
+        State.Connections.NoClip = RunService.Stepped:Connect(function()
             if LocalPlayer.Character then
                 -- NoClip
                 for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
@@ -116,9 +98,13 @@ Toggles.NoClipEnabled:OnChanged(function(bool)
                 -- Air Walk
                 local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
                 if root then
-                    Connections.AirWalkPart.CFrame = CFrame.new(root.Position.X, root.Position.Y - 3.5, root.Position.Z)
-                    if not Connections.AirWalkPart.Parent then
-                        Connections.AirWalkPart.Parent = workspace
+                    State.AirWalkPart.CFrame = CFrame.new(
+                        root.Position.X, 
+                        root.Position.Y - CONFIG.NOCLIP.PLATFORM_OFFSET, 
+                        root.Position.Z
+                    )
+                    if not State.AirWalkPart.Parent then
+                        State.AirWalkPart.Parent = workspace
                     end
                 end
             end
@@ -134,83 +120,151 @@ Toggles.NoClipEnabled:OnChanged(function(bool)
         end
 
         -- Remove air walk platform
-        if Connections.AirWalkPart then
-            Connections.AirWalkPart.Parent = nil
+        if State.AirWalkPart then
+            State.AirWalkPart.Parent = nil
         end
     end
-end)
+end
 
--- Console features group
-local ConsoleGroup = Tabs.Console:AddLeftGroupbox('Console Settings')
-
-ConsoleGroup:AddButton('Create Console', function()
+-- Console Functions
+local function createConsole()
     rconsolesettitle("Universal Script Console")
     rconsolecreate()
     rconsoleprint("@@RED@@")
     rconsoleprint("Error logging console created.\n")
-end)
-
-ConsoleGroup:AddButton('Clear Console', function()
-    rconsoleclear()
-    rconsoleprint("@@RED@@")
-end)
-
-ConsoleGroup:AddButton('Destroy Console', function()
-    rconsoledestroy()
-end)
-
-ConsoleGroup:AddInput('ConsoleTitle', {
-    Default = 'Universal Script Console',
-    Numeric = false,
-    Finished = false,
-    Text = 'Console Title',
-    Tooltip = 'Set the title of the console window',
-    Placeholder = 'Enter console title...',
-    Callback = function(value)
-        rconsolesettitle(value)
-    end
-})
-
--- Add error logging function
-local function LogError(message)
-    rconsoleprint("@@RED@@")
-    rconsoleprint("[ERROR] " .. tostring(message) .. "\n")
 end
 
--- Example usage (you can add this where needed):
--- LogError("Something went wrong!")
+local function clearConsole()
+    rconsoleclear()
+    rconsoleprint("@@RED@@")
+end
 
--- Add Misc features group (add this before UI Settings section)
-local MiscGroup = Tabs.Misc:AddLeftGroupbox('Utility')
+local function destroyConsole()
+    rconsoledestroy()
+end
 
-MiscGroup:AddButton('Rejoin Game', function()
-    local ts = game:GetService("TeleportService")
-    local p = game:GetService("Players").LocalPlayer
-    
-    -- Get the loader script and queue it
-    local source = game:HttpGet('https://raw.githubusercontent.com/UziWasTaken/ScriptHUB/main/loader.lua')
-    queue_on_teleport(source)
-    
-    ts:Teleport(game.PlaceId, p)
-end)
+-- UI Setup
+local function setupUI()
+    -- Main features group
+    local MainGroup = Tabs.Main:AddLeftGroupbox('Player Features')
 
--- UI Settings
-local SettingsGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
-SettingsGroup:AddButton('Unload', function() Library:Unload() end)
-SettingsGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Menu keybind' })
+    MainGroup:AddToggle('WalkSpeedEnabled', {
+        Text = 'WalkSpeed Enabled',
+        Default = false,
+        Tooltip = 'Enables WalkSpeed modification',
+        Callback = function(Value)
+            if Value then
+                updateWalkSpeed(Options.WalkSpeedValue.Value)
+            else
+                updateWalkSpeed(CONFIG.PLAYER.DEFAULT_WALKSPEED)
+            end
+        end
+    })
 
-Library.ToggleKeybind = Options.MenuKeybind
+    MainGroup:AddSlider('WalkSpeedValue', {
+        Text = 'WalkSpeed',
+        Default = CONFIG.PLAYER.DEFAULT_WALKSPEED,
+        Min = CONFIG.PLAYER.MIN_WALKSPEED,
+        Max = CONFIG.PLAYER.MAX_WALKSPEED,
+        Rounding = 0,
+        Callback = function(Value)
+            if Toggles.WalkSpeedEnabled.Value then
+                updateWalkSpeed(Value)
+            end
+        end
+    })
 
--- Theme and Save Manager Setup
-ThemeManager:SetLibrary(Library)
-SaveManager:SetLibrary(Library)
-SaveManager:IgnoreThemeSettings()
-SaveManager:SetIgnoreIndexes({ 'MenuKeybind' })
+    MainGroup:AddToggle('JumpPowerEnabled', {
+        Text = 'JumpPower Enabled',
+        Default = false,
+        Tooltip = 'Enables JumpPower modification',
+        Callback = function(Value)
+            if Value then
+                updateJumpPower(Options.JumpPowerValue.Value)
+            else
+                updateJumpPower(CONFIG.PLAYER.DEFAULT_JUMPPOWER)
+            end
+        end
+    })
 
-ThemeManager:SetFolder('UniversalScript')
-SaveManager:SetFolder('UniversalScript/GameConfigs')
+    MainGroup:AddSlider('JumpPowerValue', {
+        Text = 'JumpPower',
+        Default = CONFIG.PLAYER.DEFAULT_JUMPPOWER,
+        Min = CONFIG.PLAYER.MIN_JUMPPOWER,
+        Max = CONFIG.PLAYER.MAX_JUMPPOWER,
+        Rounding = 0,
+        Callback = function(Value)
+            if Toggles.JumpPowerEnabled.Value then
+                updateJumpPower(Value)
+            end
+        end
+    })
 
-SaveManager:BuildConfigSection(Tabs['UI Settings'])
-ThemeManager:ApplyToTab(Tabs['UI Settings'])
+    MainGroup:AddToggle('NoClipEnabled', {
+        Text = 'NoClip',
+        Default = false,
+        Tooltip = 'Enables NoClip with Air Walk',
+        Callback = function(Value)
+            setupNoClip(Value)
+        end
+    })
 
+    -- Console features group
+    local ConsoleGroup = Tabs.Console:AddLeftGroupbox('Console Settings')
+
+    ConsoleGroup:AddButton('Create Console', createConsole)
+    ConsoleGroup:AddButton('Clear Console', clearConsole)
+    ConsoleGroup:AddButton('Destroy Console', destroyConsole)
+
+    ConsoleGroup:AddInput('ConsoleTitle', {
+        Default = CONFIG.UI.TITLE .. ' Console',
+        Numeric = false,
+        Finished = false,
+        Text = 'Console Title',
+        Tooltip = 'Set the title of the console window',
+        Placeholder = 'Enter console title...',
+        Callback = function(Value)
+            rconsolesettitle(Value)
+        end
+    })
+
+    -- Misc features group
+    local MiscGroup = Tabs.Misc:AddLeftGroupbox('Utility')
+
+    MiscGroup:AddButton('Rejoin Game', function()
+        local source = game:HttpGet('https://raw.githubusercontent.com/UziWasTaken/ScriptHUB/main/loader.lua')
+        queue_on_teleport(source)
+        TeleportService:Teleport(game.PlaceId, LocalPlayer)
+    end)
+
+    -- UI Settings
+    local SettingsGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
+
+    SettingsGroup:AddButton('Unload', function()
+        Library:Unload()
+    end)
+
+    SettingsGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', {
+        Default = 'End',
+        NoUI = true,
+        Text = 'Menu keybind'
+    })
+
+    Library.ToggleKeybind = Options.MenuKeybind
+
+    -- Theme Manager Setup
+    ThemeManager:SetLibrary(Library)
+    SaveManager:SetLibrary(Library)
+    SaveManager:IgnoreThemeSettings()
+    SaveManager:SetIgnoreIndexes({ 'MenuKeybind' })
+    ThemeManager:SetFolder('UniversalScript')
+    SaveManager:SetFolder('UniversalScript/configs')
+    SaveManager:BuildConfigSection(Tabs['UI Settings'])
+    ThemeManager:ApplyToTab(Tabs['UI Settings'])
+end
+
+-- Initialize
+Library:SetWatermarkVisibility(true)
+Library:SetWatermark(CONFIG.UI.TITLE .. ' - v1.0')
+setupUI()
 SaveManager:LoadAutoloadConfig()
