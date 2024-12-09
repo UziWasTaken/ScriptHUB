@@ -64,7 +64,6 @@ local Window = Library:CreateWindow({
 
 local Tabs = {
     Main = Window:AddTab('Main'),
-    Console = Window:AddTab('Console'),
     ['UI Settings'] = Window:AddTab('UI Settings'),
 }
 
@@ -163,19 +162,6 @@ local function updateMovementAttributes()
     end
     
     -- Update slide speed (implement your slide speed logic here)
-end
-
--- Console Functions
-local function createConsole()
-    rconsolesettitle(CONFIG.UI.TITLE .. " Console")
-    rconsolecreate()
-    rconsoleprint(CONFIG.UI.CONSOLE_COLOR)
-    rconsoleprint("Grace Script Console Initialized\n")
-end
-
-local function clearConsole()
-    rconsoleclear()
-    rconsoleprint(CONFIG.UI.CONSOLE_COLOR)
 end
 
 -- UI Setup
@@ -321,25 +307,6 @@ local function setupUI()
         Tooltip = 'Modifies slide speed'
     })
     
-    -- Console features
-    local ConsoleGroup = Tabs.Console:AddLeftGroupbox('Console Settings')
-    
-    ConsoleGroup:AddButton('Create Console', createConsole)
-    ConsoleGroup:AddButton('Clear Console', clearConsole)
-    ConsoleGroup:AddButton('Destroy Console', rconsoledestroy)
-    
-    ConsoleGroup:AddInput('ConsoleTitle', {
-        Default = CONFIG.UI.TITLE .. ' Console',
-        Numeric = false,
-        Finished = false,
-        Text = 'Console Title',
-        Tooltip = 'Set the title of the console window',
-        Placeholder = 'Enter console title...',
-        Callback = function(Value)
-            rconsolesettitle(Value)
-        end
-    })
-    
     -- UI Settings
     local SettingsGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
     
@@ -385,6 +352,17 @@ local function initialize()
     State.connections.characterAdded = LocalPlayer.CharacterAdded:Connect(function(character)
         updateMovementAttributes()
     end)
+    
+    print(CONFIG.UI.CONSOLE_COLOR)
+    print("Grace Script Console Initialized\n")
+end
+
+local function clearConsole()
+    -- Clear print history
+    for i = 1, 50 do
+        print("\n")
+    end
+    print(CONFIG.UI.CONSOLE_COLOR)
 end
 
 initialize()
